@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/index.js": {
-      "includeFiles": "{views/**,public/**,docs/**,src/**,*.wasm,api/*.wasm}"
+      "includeFiles": "views/**,public/**,docs/**"
     }
   },
   "rewrites": [

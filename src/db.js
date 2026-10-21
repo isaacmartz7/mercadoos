@@ -9,6 +9,14 @@ const DB_PATH = process.env.VERCEL
 let db = null;
 let dbInstance = null;
 
+// Embedded Base64 WebAssembly ensures Vercel never fails to locate sql-wasm.wasm
+let wasmBinary = null;
+try {
+  wasmBinary = require("./wasm-binary");
+} catch (e) {
+  console.warn("Could not load embedded wasm-binary:", e);
+}
+
 function persist() {
   if (!db) return;
   try {
@@ -149,24 +157,7 @@ async function init() {
     return dbInstance;
   }
 
-  const wasmCandidates = [
-    path.join(__dirname, "sql-wasm.wasm"),
-    path.join(process.cwd(), "src", "sql-wasm.wasm"),
-    path.join(process.cwd(), "sql-wasm.wasm"),
-    path.join(process.cwd(), "api", "sql-wasm.wasm"),
-    path.join(path.dirname(require.resolve("sql.js")), "sql-wasm.wasm")
-  ];
-  let wasmBinary = null;
-  for (const candidate of wasmCandidates) {
-    if (fs.existsSync(candidate)) {
-      wasmBinary = fs.readFileSync(candidate);
-      break;
-    }
-  }
-
-  const SQL = wasmBinary
-    ? await initSqlJs({ wasmBinary })
-    : await initSqlJs();
+  const SQL = await initSqlJs(wasmBinary ? { wasmBinary } : {});
 
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   if (fs.existsSync(DB_PATH)) {
