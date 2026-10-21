@@ -44,3 +44,11 @@ Abre [http://localhost:3000](http://localhost:3000)
 - Reportes (día, más vendidos, stock bajo, por cajero)
 - Kardex de inventario
 - Usuarios (solo admin)
+
+## Despliegue en Vercel
+
+El proyecto ya cuenta con soporte Serverless para Vercel (`api/index.js` y `vercel.json`).
+
+1. Entra a [vercel.com/new](https://vercel.com/new)
+2. Importa el repositorio `isaacmartz7/mercadoos`
+3. Haz clic en **Deploy**
