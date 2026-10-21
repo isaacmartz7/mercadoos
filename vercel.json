@@ -1,8 +1,7 @@
 {
-  "version": 2,
   "functions": {
     "api/index.js": {
-      "includeFiles": "{views/**,public/**,docs/**,src/**}"
+      "includeFiles": "{views/**,public/**,docs/**,src/**,*.wasm,api/*.wasm}"
     }
   },
   "rewrites": [

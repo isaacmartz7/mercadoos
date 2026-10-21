@@ -6,7 +6,7 @@ const DB_PATH = process.env.VERCEL
   ? path.join("/tmp", "mercadoos.db")
   : path.join(__dirname, "..", "data", "mercadoos.db");
 
-let db;
+let db = null;
 let dbInstance = null;
 
 function persist() {
@@ -21,14 +21,17 @@ function persist() {
 }
 
 function exec(sql) {
+  if (!db) throw new Error("Base de datos no inicializada");
   db.run(sql);
 }
 
 function run(sql, params = []) {
+  if (!db) throw new Error("Base de datos no inicializada");
   db.run(sql, params);
 }
 
 function all(sql, params = []) {
+  if (!db) throw new Error("Base de datos no inicializada");
   const stmt = db.prepare(sql);
   if (params.length) stmt.bind(params);
   const rows = [];
@@ -38,11 +41,25 @@ function all(sql, params = []) {
 }
 
 function get(sql, params = []) {
+  if (!db) throw new Error("Base de datos no inicializada");
   return all(sql, params)[0] || null;
 }
 
 function lastId() {
   return get("SELECT last_insert_rowid() AS id").id;
+}
+
+function transaction(fn) {
+  run("BEGIN");
+  try {
+    const result = fn();
+    run("COMMIT");
+    persist();
+    return result;
+  } catch (error) {
+    run("ROLLBACK");
+    throw error;
+  }
 }
 
 function createSchema() {
@@ -135,6 +152,8 @@ async function init() {
   const wasmCandidates = [
     path.join(__dirname, "sql-wasm.wasm"),
     path.join(process.cwd(), "src", "sql-wasm.wasm"),
+    path.join(process.cwd(), "sql-wasm.wasm"),
+    path.join(process.cwd(), "api", "sql-wasm.wasm"),
     path.join(path.dirname(require.resolve("sql.js")), "sql-wasm.wasm")
   ];
   let wasmBinary = null;
@@ -186,20 +205,19 @@ async function init() {
     get,
     lastId,
     exec,
-    transaction(fn) {
-      run("BEGIN");
-      try {
-        const result = fn();
-        run("COMMIT");
-        persist();
-        return result;
-      } catch (error) {
-        run("ROLLBACK");
-        throw error;
-      }
-    }
+    transaction
   };
   return dbInstance;
 }
 
-module.exports = { init, DB_PATH };
+module.exports = {
+  init,
+  DB_PATH,
+  persist,
+  run,
+  all,
+  get,
+  lastId,
+  exec,
+  transaction
+};

@@ -4,7 +4,7 @@ const express = require("express");
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
 const config = require("./config");
-const { init } = require("./db");
+const { init, all, get, run, lastId, persist, transaction } = require("./db");
 const { seedIfEmpty } = require("./seed");
 
 const PERMS = {
@@ -47,33 +47,54 @@ function round2(n) {
   return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 }
 
-async function createApp() {
-  const database = await init();
-  seedIfEmpty(database);
-  const { all, get, run, lastId, persist, transaction } = database;
+const app = express();
+app.set("trust proxy", 1);
+const viewsPath = fs.existsSync(path.join(__dirname, "..", "views"))
+  ? path.join(__dirname, "..", "views")
+  : path.join(process.cwd(), "views");
+app.set("views", viewsPath);
+app.set("view engine", "ejs");
 
-  const app = express();
-  app.set("trust proxy", 1);
-  const viewsPath = fs.existsSync(path.join(__dirname, "..", "views"))
-    ? path.join(__dirname, "..", "views")
-    : path.join(process.cwd(), "views");
-  app.set("views", viewsPath);
-  app.set("view engine", "ejs");
+const publicPath = fs.existsSync(path.join(__dirname, "..", "public"))
+  ? path.join(__dirname, "..", "public")
+  : path.join(process.cwd(), "public");
+app.use("/static", express.static(publicPath));
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(
+  session({
+    secret: config.sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 1000 * 60 * 60 * 8 }
+  })
+);
 
-  const publicPath = fs.existsSync(path.join(__dirname, "..", "public"))
-    ? path.join(__dirname, "..", "public")
-    : path.join(process.cwd(), "public");
-  app.use("/static", express.static(publicPath));
-  app.use(express.urlencoded({ extended: false }));
-  app.use(express.json());
-  app.use(
-    session({
-      secret: config.sessionSecret,
-      resave: false,
-      saveUninitialized: false,
-      cookie: { maxAge: 1000 * 60 * 60 * 8 }
-    })
-  );
+let dbInitPromise = null;
+function ensureDb() {
+  if (!dbInitPromise) {
+    dbInitPromise = init().then((database) => {
+      seedIfEmpty(database);
+      return database;
+    });
+  }
+  return dbInitPromise;
+}
+
+app.use((req, res, next) => {
+  ensureDb()
+    .then(() => next())
+    .catch((err) => {
+      console.error("Error inicializando base de datos:", err);
+      res.status(500).send(`
+        <div style="font-family: sans-serif; padding: 2rem;">
+          <h2>Error al conectar con la base de datos</h2>
+          <pre>${err.stack || err.message || err}</pre>
+        </div>
+      `);
+    });
+});
+
   app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.config = config;
@@ -515,37 +536,16 @@ async function createApp() {
     res.redirect("/usuarios");
   });
 
-  return app;
-}
-
-async function start() {
-  const app = await createApp();
-  app.listen(config.port, () => {
-    console.log(`MercadoOS listo en http://localhost:${config.port}`);
-  });
-}
-
-function productoFromBody(body, stockActual) {
-  const codigo = String(body.codigo_barras || "").trim();
-  const nombre = String(body.nombre || "").trim();
-  const categoriaId = Number(body.categoria_id) || null;
-  const unidad = String(body.unidad || "unidad");
-  const precio = Number(body.precio_venta);
-  const costo = Number(body.costo || 0);
-  const impuesto = Number(body.impuesto);
-  const stock = stockActual === undefined ? Number(body.stock || 0) : Number(stockActual);
-  const minimo = Number(body.stock_minimo || 0);
-  if (!codigo || !nombre || !Number.isFinite(precio) || precio < 0) {
-    throw new Error("Datos de producto inválidos");
-  }
-  return [codigo, nombre, categoriaId, unidad, precio, costo, impuesto, stock, minimo];
-}
 
 if (require.main === module) {
-  start().catch((error) => {
+  ensureDb().then(() => {
+    app.listen(config.port, () => {
+      console.log(`MercadoOS listo en http://localhost:${config.port}`);
+    });
+  }).catch((error) => {
     console.error(error);
     process.exit(1);
   });
 }
 
-module.exports = { createApp };
+module.exports = app;
