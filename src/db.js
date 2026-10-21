@@ -11,9 +11,13 @@ let dbInstance = null;
 
 function persist() {
   if (!db) return;
-  const data = db.export();
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  fs.writeFileSync(DB_PATH, Buffer.from(data));
+  try {
+    const data = db.export();
+    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+    fs.writeFileSync(DB_PATH, Buffer.from(data));
+  } catch (err) {
+    console.error("Error al persistir DB:", err);
+  }
 }
 
 function exec(sql) {
@@ -127,26 +131,53 @@ async function init() {
   if (dbInstance) {
     return dbInstance;
   }
-  const wasmDir = path.dirname(require.resolve("sql.js"));
-  const wasmBinary = fs.readFileSync(path.join(wasmDir, "sql-wasm.wasm"));
-  const SQL = await initSqlJs({
-    wasmBinary
-  });
+
+  const wasmCandidates = [
+    path.join(__dirname, "sql-wasm.wasm"),
+    path.join(process.cwd(), "src", "sql-wasm.wasm"),
+    path.join(path.dirname(require.resolve("sql.js")), "sql-wasm.wasm")
+  ];
+  let wasmBinary = null;
+  for (const candidate of wasmCandidates) {
+    if (fs.existsSync(candidate)) {
+      wasmBinary = fs.readFileSync(candidate);
+      break;
+    }
+  }
+
+  const SQL = wasmBinary
+    ? await initSqlJs({ wasmBinary })
+    : await initSqlJs();
+
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   if (fs.existsSync(DB_PATH)) {
     db = new SQL.Database(fs.readFileSync(DB_PATH));
     createSchema();
   } else {
-    const bundledDb = path.join(__dirname, "..", "data", "mercadoos.db");
-    if (fs.existsSync(bundledDb)) {
-      db = new SQL.Database(fs.readFileSync(bundledDb));
-      createSchema();
-    } else {
+    const bundledDbCandidates = [
+      path.join(__dirname, "..", "data", "mercadoos.db"),
+      path.join(process.cwd(), "data", "mercadoos.db")
+    ];
+    let loaded = false;
+    for (const c of bundledDbCandidates) {
+      if (fs.existsSync(c)) {
+        try {
+          db = new SQL.Database(fs.readFileSync(c));
+          createSchema();
+          loaded = true;
+          break;
+        } catch (e) {
+          console.warn("No se pudo cargar la base empaquetada:", e);
+        }
+      }
+    }
+    if (!loaded) {
       db = new SQL.Database();
       createSchema();
     }
     persist();
   }
+
   dbInstance = {
     db,
     persist,

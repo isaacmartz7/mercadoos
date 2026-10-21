@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "includeFiles": "views/**,public/**,docs/**,node_modules/sql.js/dist/**"
+      "includeFiles": "{views/**,public/**,docs/**,src/**}"
     }
   },
   "rewrites": [
