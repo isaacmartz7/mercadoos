@@ -1,0 +1,62 @@
+<%- include("partials/header") %>
+<header class="page-head">
+  <div>
+    <p class="eyebrow">Bodega</p>
+    <h1>Inventario</h1>
+  </div>
+</header>
+
+<% if (puedeAjustar) { %>
+<form class="panel form-inline" method="post" action="/inventario/ajuste">
+  <label>Producto
+    <select name="producto_id" required>
+      <% productos.forEach(function (p) { %>
+        <option value="<%= p.id %>"><%= p.nombre %> (<%= money(p.stock) %>)</option>
+      <% }) %>
+    </select>
+  </label>
+  <label>Cantidad (+ entra / − sale)
+    <input name="cantidad" type="number" step="0.01" required />
+  </label>
+  <label>Motivo
+    <input name="motivo" placeholder="conteo, merma, recepción..." required />
+  </label>
+  <button class="btn primary" type="submit">Registrar ajuste</button>
+</form>
+<% } %>
+
+<div class="split">
+  <section class="panel">
+    <h2>Existencias</h2>
+    <table>
+      <thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th></tr></thead>
+      <tbody>
+        <% productos.forEach(function (p) { %>
+          <tr class="<%= p.stock <= p.stock_minimo ? 'row-warn' : '' %>">
+            <td><%= p.nombre %></td>
+            <td><%= money(p.stock) %> <%= p.unidad %></td>
+            <td><%= money(p.stock_minimo) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+  <section class="panel">
+    <h2>Kardex reciente</h2>
+    <table>
+      <thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cant.</th><th>Nuevo</th></tr></thead>
+      <tbody>
+        <% movimientos.forEach(function (m) { %>
+          <tr>
+            <td><%= m.fecha %></td>
+            <td><%= m.producto %></td>
+            <td><%= m.tipo %></td>
+            <td><%= money(m.cantidad) %></td>
+            <td><%= money(m.stock_nuevo) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+</div>
+<%- include("partials/footer") %>

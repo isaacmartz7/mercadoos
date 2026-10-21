@@ -1,0 +1,28 @@
+<%- include("partials/header") %>
+<header class="page-head">
+  <div>
+    <p class="eyebrow">Historial</p>
+    <h1>Ventas</h1>
+  </div>
+</header>
+<section class="panel">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Fecha</th><th>Cajero</th><th>Total</th><th>Pago</th><th>Estado</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% ventas.forEach(function (v) { %>
+        <tr>
+          <td><%= v.id %></td>
+          <td><%= v.fecha %></td>
+          <td><%= v.cajero %></td>
+          <td><%= config.negocio.moneda %> <%= money(v.total) %></td>
+          <td><%= v.metodo_pago %></td>
+          <td><%= v.estado %></td>
+          <td><a href="/ventas/<%= v.id %>">Ver</a></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include("partials/footer") %>

@@ -1,0 +1,38 @@
+<%- include("partials/header") %>
+<header class="page-head">
+  <div>
+    <p class="eyebrow">Administración</p>
+    <h1>Usuarios</h1>
+  </div>
+</header>
+
+<form class="panel form-inline" method="post" action="/usuarios">
+  <label>Nombre <input name="nombre" required /></label>
+  <label>Usuario <input name="usuario" required /></label>
+  <label>Contraseña <input name="password" type="password" minlength="6" required /></label>
+  <label>Rol
+    <select name="rol_id">
+      <% roles.forEach(function (r) { %>
+        <option value="<%= r.id %>"><%= r.nombre %></option>
+      <% }) %>
+    </select>
+  </label>
+  <button class="btn primary" type="submit">Crear</button>
+</form>
+
+<section class="panel">
+  <table>
+    <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th></tr></thead>
+    <tbody>
+      <% usuarios.forEach(function (u) { %>
+        <tr>
+          <td><%= u.nombre %></td>
+          <td><%= u.usuario %></td>
+          <td><%= u.rol %></td>
+          <td><%= u.activo ? "Activo" : "Inactivo" %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include("partials/footer") %>

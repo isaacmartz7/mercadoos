@@ -1,0 +1,19 @@
+<% if (user) { %><%- include("partials/header") %><% } else { %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %> · MercadoOS</title>
+  <link rel="stylesheet" href="/static/css/app.css" />
+</head>
+<body class="login-body">
+<% } %>
+<section class="panel">
+  <h1><%= title %></h1>
+  <p class="muted"><%= mensaje %></p>
+  <p><a class="btn" href="<%= user ? '/' : '/login' %>">Volver</a></p>
+</section>
+<% if (user) { %><%- include("partials/footer") %><% } else { %>
+</body></html>
+<% } %>

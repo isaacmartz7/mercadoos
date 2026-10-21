@@ -1,0 +1,71 @@
+<%- include("partials/header") %>
+<header class="page-head">
+  <div>
+    <p class="eyebrow">Gerencia</p>
+    <h1>Reportes</h1>
+  </div>
+</header>
+
+<section class="stats">
+  <article class="stat">
+    <span>Hoy</span>
+    <strong><%= config.negocio.moneda %> <%= money(hoy.total) %></strong>
+    <small><%= hoy.n %> ventas</small>
+  </article>
+  <article class="stat">
+    <span>Últimos 7 días</span>
+    <strong><%= config.negocio.moneda %> <%= money(semana.total) %></strong>
+    <small><%= semana.n %> ventas</small>
+  </article>
+</section>
+
+<div class="split">
+  <section class="panel">
+    <h2>Por cajero (hoy)</h2>
+    <table>
+      <thead><tr><th>Cajero</th><th>Tickets</th><th>Total</th></tr></thead>
+      <tbody>
+        <% porCajero.forEach(function (r) { %>
+          <tr>
+            <td><%= r.nombre %></td>
+            <td><%= r.n %></td>
+            <td><%= config.negocio.moneda %> <%= money(r.total) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+  <section class="panel">
+    <h2>Más vendidos (7 días)</h2>
+    <table>
+      <thead><tr><th>Producto</th><th>Cant.</th><th>Total</th></tr></thead>
+      <tbody>
+        <% masVendidos.forEach(function (r) { %>
+          <tr>
+            <td><%= r.nombre %></td>
+            <td><%= money(r.cantidad) %></td>
+            <td><%= config.negocio.moneda %> <%= money(r.total) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Stock bajo</h2>
+  <table>
+    <thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mínimo</th></tr></thead>
+    <tbody>
+      <% stockBajo.forEach(function (p) { %>
+        <tr class="row-warn">
+          <td><%= p.nombre %></td>
+          <td><%= p.categoria || "—" %></td>
+          <td><%= money(p.stock) %></td>
+          <td><%= money(p.stock_minimo) %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include("partials/footer") %>

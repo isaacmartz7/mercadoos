@@ -1,0 +1,43 @@
+<%- include("partials/header") %>
+<header class="page-head">
+  <div>
+    <p class="eyebrow">Ticket</p>
+    <h1>Venta #<%= venta.id %></h1>
+  </div>
+  <div class="actions">
+    <button class="btn" type="button" onclick="window.print()">Imprimir</button>
+    <a class="btn" href="/ventas">Volver</a>
+  </div>
+</header>
+
+<section class="panel ticket">
+  <p><strong><%= config.negocio.nombre %></strong> · <%= venta.fecha %></p>
+  <p>Cajero: <%= venta.cajero %> · <%= venta.metodo_pago %> · <%= venta.estado %></p>
+  <table>
+    <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
+    <tbody>
+      <% detalle.forEach(function (d) { %>
+        <tr>
+          <td><%= d.nombre %><br /><code><%= d.codigo_barras %></code></td>
+          <td><%= money(d.cantidad) %> <%= d.unidad %></td>
+          <td><%= config.negocio.moneda %> <%= money(d.precio_unitario) %></td>
+          <td><%= config.negocio.moneda %> <%= money(d.subtotal) %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <dl class="totals">
+    <div><dt>Subtotal</dt><dd><%= config.negocio.moneda %> <%= money(venta.subtotal) %></dd></div>
+    <div><dt>ISV</dt><dd><%= config.negocio.moneda %> <%= money(venta.impuesto) %></dd></div>
+    <div><dt>Descuento</dt><dd><%= config.negocio.moneda %> <%= money(venta.descuento) %></dd></div>
+    <div class="grand"><dt>Total</dt><dd><%= config.negocio.moneda %> <%= money(venta.total) %></dd></div>
+    <div><dt>Recibido</dt><dd><%= config.negocio.moneda %> <%= money(venta.recibido) %></dd></div>
+    <div><dt>Cambio</dt><dd><%= config.negocio.moneda %> <%= money(venta.cambio) %></dd></div>
+  </dl>
+  <% if (venta.estado === 'completada' && can('anular')) { %>
+    <form method="post" action="/ventas/<%= venta.id %>/anular" onsubmit="return confirm('¿Anular y devolver el stock?');">
+      <button class="btn danger" type="submit">Anular venta</button>
+    </form>
+  <% } %>
+</section>
+<%- include("partials/footer") %>

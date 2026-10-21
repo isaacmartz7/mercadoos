@@ -1,0 +1,66 @@
+<%- include("partials/header") %>
+<header class="page-head">
+  <div>
+    <p class="eyebrow">Hoy</p>
+    <h1>Hola, <%= user.nombre.split(" ")[0] %></h1>
+  </div>
+  <% if (can('caja')) { %>
+    <a class="btn primary" href="/caja">Abrir caja</a>
+  <% } %>
+</header>
+
+<section class="stats">
+  <article class="stat">
+    <span>Ventas de hoy</span>
+    <strong><%= config.negocio.moneda %> <%= money(ventasHoy.total) %></strong>
+    <small><%= ventasHoy.n %> tickets</small>
+  </article>
+  <article class="stat">
+    <span>Catálogo</span>
+    <strong><%= productosN %></strong>
+    <small>productos activos</small>
+  </article>
+  <article class="stat warn">
+    <span>Stock bajo</span>
+    <strong><%= stockBajo.length %></strong>
+    <small>para reponer</small>
+  </article>
+</section>
+
+<div class="split">
+  <section class="panel">
+    <h2>Más vendidos hoy</h2>
+    <% if (!top.length) { %>
+      <p class="muted">Aún no hay ventas hoy. Haz una en caja para ver el ranking.</p>
+    <% } else { %>
+      <table>
+        <thead><tr><th>Producto</th><th>Cant.</th><th>Total</th></tr></thead>
+        <tbody>
+          <% top.forEach(function (row) { %>
+            <tr>
+              <td><%= row.nombre %></td>
+              <td><%= money(row.cantidad) %></td>
+              <td><%= config.negocio.moneda %> <%= money(row.total) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </section>
+  <section class="panel">
+    <h2>Alertas de inventario</h2>
+    <% if (!stockBajo.length) { %>
+      <p class="muted">Nada urgente. El stock está por encima del mínimo.</p>
+    <% } else { %>
+      <ul class="alert-list">
+        <% stockBajo.forEach(function (p) { %>
+          <li>
+            <span><%= p.nombre %></span>
+            <em><%= money(p.stock) %> <%= p.unidad %></em>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+<%- include("partials/footer") %>

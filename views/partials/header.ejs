@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %> · <%= config.negocio.nombre %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/app.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/">
+        <span class="brand-mark">M</span>
+        <span>
+          <strong><%= config.negocio.nombre %></strong>
+          <small><%= config.negocio.sucursal %></small>
+        </span>
+      </a>
+      <nav>
+        <a href="/" class="<%= typeof nav !== 'undefined' && nav === 'inicio' ? 'active' : '' %>">Inicio</a>
+        <% if (can('caja')) { %><a href="/caja" class="<%= typeof nav !== 'undefined' && nav === 'caja' ? 'active' : '' %>">Caja</a><% } %>
+        <% if (can('productos')) { %><a href="/productos" class="<%= typeof nav !== 'undefined' && nav === 'productos' ? 'active' : '' %>">Productos</a><% } %>
+        <% if (can('inventario')) { %><a href="/inventario" class="<%= typeof nav !== 'undefined' && nav === 'inventario' ? 'active' : '' %>">Inventario</a><% } %>
+        <% if (can('ventas')) { %><a href="/ventas" class="<%= typeof nav !== 'undefined' && nav === 'ventas' ? 'active' : '' %>">Ventas</a><% } %>
+        <% if (can('reportes')) { %><a href="/reportes" class="<%= typeof nav !== 'undefined' && nav === 'reportes' ? 'active' : '' %>">Reportes</a><% } %>
+        <% if (can('usuarios')) { %><a href="/usuarios" class="<%= typeof nav !== 'undefined' && nav === 'usuarios' ? 'active' : '' %>">Usuarios</a><% } %>
+      </nav>
+      <form class="sidebar-user" method="post" action="/logout">
+        <div>
+          <strong><%= user.nombre %></strong>
+          <small><%= user.rolNombre %></small>
+        </div>
+        <button type="submit">Salir</button>
+      </form>
+    </aside>
+    <main class="main">
+      <% if (flash) { %>
+        <div class="flash <%= flash.tipo %>"><%= flash.texto %></div>
+      <% } %>

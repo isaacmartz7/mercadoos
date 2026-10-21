@@ -1,0 +1,45 @@
+<%- include("partials/header") %>
+<div class="pos">
+  <section class="pos-left">
+    <header class="page-head compact">
+      <div>
+        <p class="eyebrow">Punto de venta</p>
+        <h1>Caja</h1>
+      </div>
+    </header>
+    <form id="buscar-form" class="scan-bar" autocomplete="off">
+      <input id="buscar" name="q" placeholder="Escanea o escribe código / nombre y pulsa Enter" autofocus />
+      <button class="btn primary" type="submit">Agregar</button>
+    </form>
+    <div id="resultados" class="results"></div>
+  </section>
+  <aside class="pos-cart panel">
+    <h2>Ticket</h2>
+    <ul id="carrito" class="cart"></ul>
+    <label class="discount">Descuento
+      <input id="descuento" type="number" min="0" step="0.01" value="0" />
+    </label>
+    <dl class="totals">
+      <div><dt>Subtotal</dt><dd id="subtotal">L 0.00</dd></div>
+      <div><dt>ISV</dt><dd id="impuesto">L 0.00</dd></div>
+      <div class="grand"><dt>Total</dt><dd id="total">L 0.00</dd></div>
+    </dl>
+    <div class="pay-row">
+      <label>Pago
+        <select id="metodo">
+          <option value="efectivo">Efectivo</option>
+          <option value="tarjeta">Tarjeta</option>
+        </select>
+      </label>
+      <label id="wrap-recibido">Recibido
+        <input id="recibido" type="number" min="0" step="0.01" />
+      </label>
+    </div>
+    <p class="cambio">Cambio: <strong id="cambio">L 0.00</strong></p>
+    <p id="pos-error" class="flash error hidden"></p>
+    <button id="cobrar" class="btn primary big" type="button">Cobrar y descontar stock</button>
+  </aside>
+</div>
+<script>window.MONEDA = "<%= config.negocio.moneda %>";</script>
+<script src="/static/js/caja.js"></script>
+<%- include("partials/footer") %>

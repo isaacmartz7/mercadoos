@@ -1,0 +1,41 @@
+<%- include("partials/header") %>
+<header class="page-head">
+  <div>
+    <p class="eyebrow">Catálogo</p>
+    <h1>Productos</h1>
+  </div>
+  <a class="btn primary" href="/productos/nuevo">Nuevo producto</a>
+</header>
+
+<form class="toolbar" method="get" action="/productos">
+  <input name="q" value="<%= q %>" placeholder="Buscar por nombre o código de barras" />
+  <button class="btn" type="submit">Buscar</button>
+</form>
+
+<section class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Producto</th>
+        <th>Categoría</th>
+        <th>Precio</th>
+        <th>Stock</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% productos.forEach(function (p) { %>
+        <tr class="<%= p.stock <= p.stock_minimo ? 'row-warn' : '' %>">
+          <td><code><%= p.codigo_barras %></code></td>
+          <td><%= p.nombre %></td>
+          <td><%= p.categoria || "—" %></td>
+          <td><%= config.negocio.moneda %> <%= money(p.precio_venta) %></td>
+          <td><%= money(p.stock) %> <%= p.unidad %></td>
+          <td><a href="/productos/<%= p.id %>/editar">Editar</a></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include("partials/footer") %>

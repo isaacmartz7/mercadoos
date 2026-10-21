@@ -1,0 +1,21 @@
+{
+  "name": "mercadoos",
+  "version": "1.0.0",
+  "description": "Sistema de punto de venta, inventario y reportes para supermercados",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true,
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "sql.js": "^1.12.0"
+  }
+}

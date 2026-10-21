@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MercadoOS — Avance del proyecto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #14241f;
+      --forest: #1a3c34;
+      --leaf: #2f6f5e;
+      --gold: #d4a017;
+      --paper: #f4efe4;
+      --cream: #fffaf1;
+      --muted: #5c6b66;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: "Source Sans 3", sans-serif;
+      background: #0f1c18;
+      color: var(--ink);
+      overflow: hidden;
+    }
+    .deck { height: 100%; }
+    .slide {
+      display: none;
+      height: 100%;
+      padding: 56px 72px 88px;
+      background:
+        radial-gradient(1200px 500px at 100% -10%, rgba(212, 160, 23, 0.12), transparent 50%),
+        linear-gradient(160deg, var(--cream), var(--paper));
+      flex-direction: column;
+      justify-content: center;
+    }
+    .slide.on { display: flex; }
+    .slide.cover {
+      background:
+        linear-gradient(165deg, #122823 0%, #1a3c34 55%, #24584a 100%);
+      color: #f7f1e4;
+    }
+    .eyebrow {
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--leaf);
+      margin-bottom: 12px;
+    }
+    .cover .eyebrow { color: var(--gold); }
+    h1, h2 {
+      font-family: Fraunces, Georgia, serif;
+      font-weight: 700;
+      line-height: 1.12;
+    }
+    h1 { font-size: clamp(42px, 6vw, 72px); margin-bottom: 16px; }
+    h2 { font-size: clamp(28px, 4vw, 44px); margin-bottom: 28px; color: var(--forest); }
+    .cover h2 { color: #f7f1e4; }
+    .lead { font-size: 22px; max-width: 820px; color: var(--muted); line-height: 1.45; }
+    .cover .lead { color: #d9e6e0; }
+    ul { font-size: 22px; line-height: 1.45; padding-left: 22px; }
+    li { margin-bottom: 10px; }
+    .grid { display: grid; gap: 16px; }
+    .grid.two { grid-template-columns: 1fr 1fr; }
+    .grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .card {
+      background: #fff;
+      border: 1px solid #e4d9c5;
+      border-radius: 16px;
+      padding: 18px 20px;
+      box-shadow: 0 8px 24px rgba(20, 36, 31, 0.04);
+    }
+    .card h3 { font-family: Fraunces, serif; font-size: 22px; margin-bottom: 8px; color: var(--forest); }
+    .card p, .card li { font-size: 16px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 12px 14px; font-size: 17px; border-bottom: 1px solid #eee4d4; }
+    th { background: var(--forest); color: #fff; font-weight: 600; }
+    .flow {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-weight: 700;
+    }
+    .flow span {
+      background: var(--forest); color: #fff; padding: 10px 14px; border-radius: 999px; font-size: 16px;
+    }
+    .flow i { color: var(--gold); font-style: normal; }
+    .footer {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 28px;
+      color: #c9d7d1;
+      font-size: 14px;
+      background: #0f1c18;
+    }
+    .hint { opacity: 0.75; }
+    .kbd { border: 1px solid #3b524b; padding: 2px 7px; border-radius: 6px; }
+    @media print {
+      body { overflow: visible; background: #fff; }
+      .footer { display: none; }
+      .slide { display: flex !important; height: auto; min-height: 100vh; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+    <section class="slide cover on">
+      <p class="eyebrow">Proyecto final de programación</p>
+      <h1>MercadoOS</h1>
+      <p class="lead">Sistema de punto de venta, inventario y reportes para supermercados. Avance de análisis, diseño y prototipo funcional.</p>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">El problema</p>
+      <h2>El súper pequeño opera a ciegas</h2>
+      <ul>
+        <li>Stock en cuaderno o Excel: se vende lo que ya no hay.</li>
+        <li>Caja sin arqueo: no se sabe cuánto debió quedar.</li>
+        <li>Precios distintos según el cajero.</li>
+        <li>Cero reportes para decidir qué comprar.</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Objetivo</p>
+      <h2>Operar el negocio, no solo listar productos</h2>
+      <p class="lead">Un sistema web donde el flujo sea: entra mercadería, se controla inventario, se vende en caja, se cierra y se reporta. Listo para la clase y con camino a producto vendible.</p>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Alcance</p>
+      <h2>Tres fases, promesas honestas</h2>
+      <div class="grid three">
+        <article class="card"><h3>Fase 1 — MVP</h3><p>Login, productos, inventario, caja, ventas y reportes. Esto es el prototipo de hoy.</p></article>
+        <article class="card"><h3>Fase 2 — Completo</h3><p>Compras, proveedores, clientes, cierre de caja, devoluciones y caducidad.</p></article>
+        <article class="card"><h3>Fase 3 — Vendible</h3><p>Multi-sucursal, factura fiscal, auditoría, backup e instalador.</p></article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Fase 1</p>
+      <h2>Módulos imprescindibles</h2>
+      <ul>
+        <li><strong>Usuarios y roles</strong> — contraseñas con hash.</li>
+        <li><strong>Catálogo</strong> — código de barras, precio, ISV, stock mínimo.</li>
+        <li><strong>Inventario</strong> — existencias reales y alerta de stock bajo.</li>
+        <li><strong>Caja (POS)</strong> — carrito, cobro, cambio y descuento automático de stock.</li>
+        <li><strong>Ventas y reportes</strong> — día, más vendidos, total por cajero.</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Fase 2 y 3</p>
+      <h2>De proyecto de clase a producto</h2>
+      <div class="grid two">
+        <article class="card">
+          <h3>Completo (Fase 2)</h3>
+          <ul>
+            <li>Proveedores y órdenes de compra</li>
+            <li>Cierre de caja y devoluciones</li>
+            <li>Clientes, promociones, lotes</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Vendible (Fase 3)</h3>
+          <ul>
+            <li>Multi-sucursal y multi-caja</li>
+            <li>Ticket / factura fiscal</li>
+            <li>Auditoría, backup, Docker</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Seguridad operativa</p>
+      <h2>Roles</h2>
+      <table>
+        <thead><tr><th>Rol</th><th>Puede hacer</th></tr></thead>
+        <tbody>
+          <tr><td>Cajero</td><td>Vender, consultar precio/stock, ver su caja</td></tr>
+          <tr><td>Bodeguero</td><td>Productos, ajustar inventario, caducidad</td></tr>
+          <tr><td>Gerente</td><td>Reportes, precios, ventas, dashboard</td></tr>
+          <tr><td>Admin</td><td>Usuarios, anulaciones, configuración, todo</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Arquitectura de negocio</p>
+      <h2>No es un CRUD: es un ciclo</h2>
+      <div class="flow">
+        <span>Proveedor</span><i>→</i>
+        <span>Compras</span><i>→</i>
+        <span>Inventario</span><i>→</i>
+        <span>Caja</span><i>→</i>
+        <span>Ventas</span><i>→</i>
+        <span>Reportes</span>
+      </div>
+      <p class="lead" style="margin-top:28px">Si el stock no baja al vender, el sistema miente. El prototipo ya descuenta existencias en cada venta.</p>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Datos</p>
+      <h2>Modelo mínimo</h2>
+      <div class="grid two">
+        <article class="card">
+          <h3>Hoy</h3>
+          <p>Rol, Usuario, Categoria, Producto, Venta, DetalleVenta, MovimientoInventario (kardex).</p>
+        </article>
+        <article class="card">
+          <h3>Después</h3>
+          <p>Proveedor, Compra, Cliente, Caja, CierreCaja, Promocion, Lote.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Tecnología</p>
+      <h2>Stack del prototipo</h2>
+      <ul>
+        <li><strong>Node.js + Express + EJS</strong> — backend MVC, fácil de explicar.</li>
+        <li><strong>SQLite</strong> — cero servidor de BD; migrable a MySQL/PostgreSQL.</li>
+        <li><strong>Sesiones + bcrypt</strong> — autenticación real, no usuarios en texto plano.</li>
+        <li><strong>Interfaz web</strong> — se muestra en el navegador, lista para vender después.</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Plan</p>
+      <h2>Cronograma</h2>
+      <table>
+        <thead><tr><th>Semana</th><th>Entrega</th></tr></thead>
+        <tbody>
+          <tr><td>1 — ahora</td><td>Análisis, módulos y prototipo (login + productos + caja)</td></tr>
+          <tr><td>2</td><td>Kardex, historial, ticket y pulido de caja</td></tr>
+          <tr><td>3</td><td>Extra Fase 2: compras o cierre de caja</td></tr>
+          <tr><td>4</td><td>Reportes, validaciones, defensa</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Hoy</p>
+      <h2>Qué está listo para mostrar</h2>
+      <ul>
+        <li>Documento de avance y estas diapositivas.</li>
+        <li>Prototipo corriendo en <strong>localhost:3000</strong>.</li>
+        <li>Cuentas: admin, cajero, bodeguero, gerente.</li>
+        <li>Una venta real que baja el stock al confirmar el cobro.</li>
+      </ul>
+    </section>
+
+    <section class="slide cover">
+      <p class="eyebrow">Siguiente revisión</p>
+      <h1>Demo prometida</h1>
+      <p class="lead">Login por rol → CRUD de productos → venta en caja que descuenta stock → reporte del día. Preguntas.</p>
+    </section>
+  </div>
+  <div class="footer">
+    <span>MercadoOS · Avance de proyecto</span>
+    <span id="count">1 / 12</span>
+    <span class="hint"><span class="kbd">←</span> <span class="kbd">→</span> o clic</span>
+  </div>
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    let i = 0;
+    function show(n) {
+      i = (n + slides.length) % slides.length;
+      slides.forEach((s, idx) => s.classList.toggle("on", idx === i));
+      document.getElementById("count").textContent = (i + 1) + " / " + slides.length;
+    }
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); show(i + 1); }
+      if (e.key === "ArrowLeft") show(i - 1);
+    });
+    document.getElementById("deck").addEventListener("click", (e) => {
+      if (e.target.closest("a")) return;
+      show(i + (e.clientX > innerWidth / 2 ? 1 : -1));
+    });
+  </script>
+</body>
+</html>
