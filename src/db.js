@@ -1,9 +1,10 @@
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const initSqlJs = require("sql.js");
 
 const DB_PATH = process.env.VERCEL
-  ? path.join("/tmp", "mercadoos.db")
+  ? path.join(os.tmpdir(), "mercadoos.db")
   : path.join(__dirname, "..", "data", "mercadoos.db");
 
 let db = null;
@@ -157,7 +158,33 @@ async function init() {
     return dbInstance;
   }
 
-  const SQL = await initSqlJs(wasmBinary ? { wasmBinary } : {});
+  // Pre-write wasm to tmpdir so any filesystem fallback also finds it
+  const tmpWasm = path.join(os.tmpdir(), "sql-wasm.wasm");
+  if (wasmBinary && !fs.existsSync(tmpWasm)) {
+    try {
+      fs.writeFileSync(tmpWasm, wasmBinary);
+    } catch (e) {
+      console.warn("Could not write wasm to tmpdir:", e);
+    }
+  }
+
+  const sqlConfig = {};
+  if (wasmBinary) {
+    sqlConfig.wasmBinary = wasmBinary;
+    sqlConfig.locateFile = () => tmpWasm;
+    sqlConfig.instantiateWasm = (imports, successCallback) => {
+      WebAssembly.instantiate(wasmBinary, imports)
+        .then((output) => {
+          successCallback(output.instance, output.module);
+        })
+        .catch((err) => {
+          console.error("WASM instantiate error:", err);
+        });
+      return {};
+    };
+  }
+
+  const SQL = await initSqlJs(sqlConfig);
 
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   if (fs.existsSync(DB_PATH)) {

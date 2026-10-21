@@ -49,15 +49,24 @@ function round2(n) {
 
 const app = express();
 app.set("trust proxy", 1);
-const viewsPath = fs.existsSync(path.join(__dirname, "..", "views"))
-  ? path.join(__dirname, "..", "views")
-  : path.join(process.cwd(), "views");
+function findPath(subDir) {
+  const candidates = [
+    path.join(__dirname, "..", subDir),
+    path.join(process.cwd(), subDir),
+    path.join(__dirname, subDir),
+    path.join("/var/task", subDir)
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return path.join(process.cwd(), subDir);
+}
+
+const viewsPath = findPath("views");
 app.set("views", viewsPath);
 app.set("view engine", "ejs");
 
-const publicPath = fs.existsSync(path.join(__dirname, "..", "public"))
-  ? path.join(__dirname, "..", "public")
-  : path.join(process.cwd(), "public");
+const publicPath = findPath("public");
 app.use("/static", express.static(publicPath));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -119,9 +128,7 @@ app.use((req, res, next) => {
   }
 
   app.get("/presentacion", (req, res) => {
-    const docsPath = fs.existsSync(path.join(__dirname, "..", "docs"))
-      ? path.join(__dirname, "..", "docs")
-      : path.join(process.cwd(), "docs");
+    const docsPath = findPath("docs");
     res.sendFile(path.join(docsPath, "presentacion.html"));
   });
 
