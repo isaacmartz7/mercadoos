@@ -35,13 +35,13 @@
       ? items
           .map(
             (it, i) => `<li>
-              <span>${it.nombre}<br><small>${fmt(it.precio_venta)} · stock ${it.stock}</small></span>
-              <input type="number" min="0.01" step="0.01" value="${it.cantidad}" data-i="${i}" />
-              <button type="button" data-del="${i}">x</button>
+              <span>${it.nombre}<br><small>${fmt(it.precio_venta)} · quedan ${it.stock}</small></span>
+              <input type="number" min="0.01" step="0.01" value="${it.cantidad}" data-i="${i}" aria-label="Cantidad de ${it.nombre}" />
+              <button type="button" class="btn-link" data-del="${i}">Quitar</button>
             </li>`
           )
           .join("")
-      : "<li class='muted'>Vacío. Busca un producto.</li>";
+      : "<li class='muted'>El ticket está vacío. Busca un producto y agrégalo.</li>";
     const t = totals();
     document.getElementById("subtotal").textContent = fmt(t.subtotal);
     document.getElementById("impuesto").textContent = fmt(t.impuesto);
@@ -83,7 +83,7 @@
             </button>`
           )
           .join("")
-      : "<p class='muted'>Sin resultados.</p>";
+      : `<p class="muted">No encontramos “${q}”. Prueba con el nombre o el código de barras.</p>`;
     resultados.querySelectorAll(".result").forEach((btn) => {
       btn.addEventListener("click", () => {
         add(data.find((p) => String(p.id) === btn.dataset.id));
@@ -123,7 +123,8 @@
   const cobrarBtn = document.getElementById("cobrar");
   cobrarBtn.addEventListener("click", async () => {
     const t = totals();
-    if (!items.length) return showError("Agrega productos al ticket.");
+    if (!items.length) return showError("Agrega al menos un producto al ticket.");
+    if (!confirm(`¿Cobrar ${fmt(t.total)}?`)) return;
     if (cobrarBtn.disabled) return;
     cobrarBtn.disabled = true;
     const payload = {

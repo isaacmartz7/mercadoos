@@ -6,13 +6,13 @@
   </div>
   <div class="actions">
     <button class="btn" type="button" onclick="window.print()">Imprimir</button>
-    <a class="btn" href="/ventas">Volver</a>
+    <a class="btn" href="/ventas">Volver a ventas</a>
   </div>
 </header>
 
 <section class="panel ticket">
   <p><strong><%= config.negocio.nombre %></strong> · <%= venta.fecha %></p>
-  <p>Cajero: <%= venta.cajero %> · <%= venta.metodo_pago %> · <%= venta.estado %></p>
+  <p>Cajero: <%= venta.cajero %> · <%= venta.metodo_pago === "tarjeta" ? "Tarjeta" : "Efectivo" %> · <%= venta.estado === "anulada" ? "Anulada" : "Completada" %></p>
   <table>
     <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
     <tbody>

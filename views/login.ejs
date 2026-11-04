@@ -13,15 +13,15 @@
   <main class="login-card">
     <p class="eyebrow">Sistema de supermercado</p>
     <h1>MercadoOS</h1>
-    <p class="muted">Entra con tu usuario. La contraseña queda oculta al escribir.</p>
+    <p class="muted">Ingresa con el usuario que te asignaron. Si no lo recuerdas, pide ayuda a un administrador.</p>
     <% if (error) { %><div class="flash error"><%= error %></div><% } %>
     <form method="post" action="/login" autocomplete="on">
       <label>Usuario
-        <input name="usuario" autocomplete="username" spellcheck="false" autocapitalize="off" required autofocus />
+        <input name="usuario" autocomplete="username" spellcheck="false" autocapitalize="off" placeholder="Tu usuario" required autofocus />
       </label>
       <label>Contraseña
         <span class="password-field">
-          <input id="login-password" name="password" type="password" autocomplete="current-password" spellcheck="false" required />
+          <input id="login-password" name="password" type="password" autocomplete="current-password" spellcheck="false" placeholder="Tu contraseña" required />
           <button class="password-toggle" type="button" id="toggle-password" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña">
             <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M2.2 12s3.6-7 9.8-7 9.8 7 9.8 7-3.6 7-9.8 7-9.8-7-9.8-7z"/>
@@ -36,7 +36,7 @@
           </button>
         </span>
       </label>
-      <button class="btn primary" type="submit">Entrar</button>
+      <button class="btn primary" type="submit">Entrar al sistema</button>
     </form>
     <p class="login-hint">La contraseña se oculta al escribir. Usa el ojo si necesitas verla.</p>
   </main>

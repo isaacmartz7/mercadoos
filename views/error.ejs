@@ -10,9 +10,10 @@
 <body class="login-body">
 <% } %>
 <section class="panel">
+  <p class="eyebrow">Aviso</p>
   <h1><%= title %></h1>
   <p class="muted"><%= mensaje %></p>
-  <p><a class="btn" href="<%= user ? '/' : '/login' %>">Volver</a></p>
+  <p><a class="btn primary" href="<%= user ? '/' : '/login' %>"><%= user ? "Volver al inicio" : "Ir al inicio de sesión" %></a></p>
 </section>
 <% if (user) { %><%- include("partials/footer") %><% } else { %>
 </body></html>

@@ -3,27 +3,67 @@
   <div>
     <p class="eyebrow">Hoy</p>
     <h1>Hola, <%= user.rolNombre %></h1>
+    <p class="lede">Resumen de la tienda. El menú de la izquierda muestra solo lo que tu rol puede usar.</p>
   </div>
   <% if (can('caja')) { %>
-    <a class="btn primary" href="/caja">Abrir caja</a>
+    <a class="btn primary" href="/caja">Cobrar en caja</a>
   <% } %>
 </header>
+
+<nav class="shortcuts" aria-label="Accesos rápidos">
+  <% if (can('caja')) { %>
+    <a class="shortcut" href="/caja">
+      <strong>Caja</strong>
+      <span>Busca un producto y cobra el ticket</span>
+    </a>
+  <% } %>
+  <% if (can('productos')) { %>
+    <a class="shortcut" href="/productos">
+      <strong>Productos</strong>
+      <span>Consulta precios o agrega un artículo</span>
+    </a>
+  <% } %>
+  <% if (can('inventario')) { %>
+    <a class="shortcut" href="/inventario">
+      <strong>Inventario</strong>
+      <span>Revisa existencias y stock bajo</span>
+    </a>
+  <% } %>
+  <% if (can('ventas')) { %>
+    <a class="shortcut" href="/ventas">
+      <strong>Ventas</strong>
+      <span>Abre el historial de tickets</span>
+    </a>
+  <% } %>
+  <% if (can('reportes')) { %>
+    <a class="shortcut" href="/reportes">
+      <strong>Reportes</strong>
+      <span>Totales del día y de la semana</span>
+    </a>
+  <% } %>
+  <% if (can('usuarios')) { %>
+    <a class="shortcut" href="/usuarios">
+      <strong>Usuarios</strong>
+      <span>Crea cuentas para el equipo</span>
+    </a>
+  <% } %>
+</nav>
 
 <section class="stats">
   <article class="stat">
     <span>Ventas de hoy</span>
     <strong><%= config.negocio.moneda %> <%= money(ventasHoy.total) %></strong>
-    <small><%= ventasHoy.n %> tickets</small>
+    <small><%= ventasHoy.n === 1 ? "1 ticket" : ventasHoy.n + " tickets" %></small>
   </article>
   <article class="stat">
     <span>Catálogo</span>
     <strong><%= productosN %></strong>
-    <small>productos activos</small>
+    <small><%= productosN === 1 ? "producto activo" : "productos activos" %></small>
   </article>
-  <article class="stat warn">
+  <article class="stat <%= stockBajo.length ? 'warn' : '' %>">
     <span>Stock bajo</span>
     <strong><%= stockBajo.length %></strong>
-    <small>para reponer</small>
+    <small><%= stockBajo.length ? "necesitan reposición" : "todo en orden" %></small>
   </article>
 </section>
 
@@ -31,26 +71,31 @@
   <section class="panel">
     <h2>Más vendidos hoy</h2>
     <% if (!top.length) { %>
-      <p class="muted">Aún no hay ventas hoy. Haz una en caja para ver el ranking.</p>
+      <div class="empty">
+        <p>Todavía no hay ventas hoy.</p>
+        <% if (can('caja')) { %><p><a href="/caja">Cobra el primer ticket en caja</a> para ver el ranking aquí.</p><% } %>
+      </div>
     <% } else { %>
-      <table>
-        <thead><tr><th>Producto</th><th>Cant.</th><th>Total</th></tr></thead>
-        <tbody>
-          <% top.forEach(function (row) { %>
-            <tr>
-              <td><%= row.nombre %></td>
-              <td><%= money(row.cantidad) %></td>
-              <td><%= config.negocio.moneda %> <%= money(row.total) %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Producto</th><th>Cant.</th><th>Total</th></tr></thead>
+          <tbody>
+            <% top.forEach(function (row) { %>
+              <tr>
+                <td><%= row.nombre %></td>
+                <td><%= money(row.cantidad) %></td>
+                <td><%= config.negocio.moneda %> <%= money(row.total) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
     <% } %>
   </section>
   <section class="panel">
     <h2>Alertas de inventario</h2>
     <% if (!stockBajo.length) { %>
-      <p class="muted">Nada urgente. El stock está por encima del mínimo.</p>
+      <p class="muted">Nada urgente: el stock está por encima del mínimo.</p>
     <% } else { %>
       <ul class="alert-list">
         <% stockBajo.forEach(function (p) { %>
@@ -60,6 +105,7 @@
           </li>
         <% }) %>
       </ul>
+      <% if (can('inventario')) { %><p class="hint"><a href="/inventario">Ir a inventario</a> para reponer o ajustar.</p><% } %>
     <% } %>
   </section>
 </div>

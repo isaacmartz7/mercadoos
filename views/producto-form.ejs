@@ -3,16 +3,17 @@
   <div>
     <p class="eyebrow">Catálogo</p>
     <h1><%= producto ? "Editar producto" : "Nuevo producto" %></h1>
+    <p class="lede"><%= producto ? "Cambia solo lo necesario y guarda. El stock se ajusta en Inventario." : "Completa los datos para que el producto aparezca en caja." %></p>
   </div>
-  <a class="btn" href="/productos">Volver</a>
+  <a class="btn" href="/productos">Volver al listado</a>
 </header>
 
 <form class="panel form-grid" method="post">
   <label>Código de barras
-    <input name="codigo_barras" required value="<%= producto ? producto.codigo_barras : '' %>" />
+    <input name="codigo_barras" required placeholder="Ej. 7501000100019" value="<%= producto ? producto.codigo_barras : '' %>" />
   </label>
   <label>Nombre
-    <input name="nombre" required value="<%= producto ? producto.nombre : '' %>" />
+    <input name="nombre" required placeholder="Ej. Arroz blanco 5 lb" value="<%= producto ? producto.nombre : '' %>" />
   </label>
   <label>Categoría
     <select name="categoria_id">
@@ -28,14 +29,15 @@
       <% }) %>
     </select>
   </label>
-  <label>Precio de venta
-    <input name="precio_venta" type="number" step="0.01" min="0" required value="<%= producto ? producto.precio_venta : '' %>" />
+  <label>Precio de venta (<%= config.negocio.moneda %>)
+    <input name="precio_venta" type="number" step="0.01" min="0" required placeholder="0.00" value="<%= producto ? producto.precio_venta : '' %>" />
   </label>
-  <label>Costo
+  <label>Costo (<%= config.negocio.moneda %>)
     <input name="costo" type="number" step="0.01" min="0" value="<%= producto ? producto.costo : 0 %>" />
   </label>
-  <label>Impuesto (ISV)
+  <label>Impuesto ISV
     <input name="impuesto" type="number" step="0.01" min="0" value="<%= producto ? producto.impuesto : config.negocio.impuestoDefault %>" />
+    <small class="field-help">Usa 0.15 para 15%.</small>
   </label>
   <% if (!producto) { %>
     <label>Stock inicial
@@ -44,9 +46,10 @@
   <% } %>
   <label>Stock mínimo
     <input name="stock_minimo" type="number" step="0.01" min="0" value="<%= producto ? producto.stock_minimo : 5 %>" />
+    <small class="field-help">Si el stock baja de este número, se marca en amarillo.</small>
   </label>
   <div class="form-actions">
-    <button class="btn primary" type="submit">Guardar</button>
+    <button class="btn primary" type="submit"><%= producto ? "Guardar cambios" : "Crear producto" %></button>
   </div>
 </form>
 <%- include("partials/footer") %>
