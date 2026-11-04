@@ -119,7 +119,19 @@ label { display: block; font-size: 14px; font-weight: 600; }
 .login-card h1 { margin-bottom: 8px; }
 .login-card form { display: grid; gap: 12px; margin-top: 16px; }
 .login-hint { margin-top: 18px; font-size: 13px; color: #61706b; }
-.login-card input[type="password"] { letter-spacing: 0.18em; }
+.password-field { position: relative; display: block; }
+.password-field input { padding-right: 44px; }
+.password-field input[type="password"] { letter-spacing: 0.18em; }
+.password-toggle {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 36px; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; color: #5d6c67; display: grid; place-items: center;
+}
+.password-toggle:hover, .password-toggle:focus-visible { background: #efe6d4; color: var(--forest); }
+.password-toggle svg { width: 20px; height: 20px; }
+.password-toggle .icon-eye-off { display: none; }
+.password-toggle[aria-pressed="true"] .icon-eye { display: none; }
+.password-toggle[aria-pressed="true"] .icon-eye-off { display: block; }
 .role-badge {
   display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px;
   background: #efe6d4; color: var(--forest); font-size: 11px; letter-spacing: 0.04em;
