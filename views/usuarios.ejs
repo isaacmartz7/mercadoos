@@ -9,7 +9,7 @@
 <form class="panel form-inline" method="post" action="/usuarios">
   <label>Nombre <input name="nombre" required /></label>
   <label>Usuario <input name="usuario" required /></label>
-  <label>Contraseña <input name="password" type="password" minlength="6" required /></label>
+  <label>Contraseña <input name="password" type="password" minlength="8" autocomplete="new-password" required /></label>
   <label>Rol
     <select name="rol_id">
       <% roles.forEach(function (r) { %>
@@ -28,7 +28,7 @@
         <tr>
           <td><%= u.nombre %></td>
           <td><%= u.usuario %></td>
-          <td><%= u.rol %></td>
+          <td><%= u.rol %><% if (u.rol_clave === "superusuario") { %> <span class="role-badge">dev</span><% } %></td>
           <td><%= u.activo ? "Activo" : "Inactivo" %></td>
         </tr>
       <% }) %>

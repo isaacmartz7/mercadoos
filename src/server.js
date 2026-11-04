@@ -5,7 +5,7 @@ const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const config = require("./config");
 const { init, all, get, run, lastId, persist, transaction } = require("./db");
-const { seedIfEmpty } = require("./seed");
+const { seedIfEmpty, ensureSuperuser } = require("./seed");
 
 const PERMS = {
   caja: ["admin", "cajero", "gerente"],
@@ -18,8 +18,14 @@ const PERMS = {
   anular: ["admin"]
 };
 
+function isSuperuser(user) {
+  return Boolean(user && user.rol === "superusuario");
+}
+
 function can(user, perm) {
-  return Boolean(user && PERMS[perm] && PERMS[perm].includes(user.rol));
+  if (!user) return false;
+  if (isSuperuser(user)) return true;
+  return Boolean(PERMS[perm] && PERMS[perm].includes(user.rol));
 }
 
 function requireAuth(req, res, next) {
@@ -88,6 +94,7 @@ function ensureDb() {
   if (!dbInitPromise) {
     dbInitPromise = init().then((database) => {
       seedIfEmpty(database);
+      ensureSuperuser(database);
       return database;
     });
   }
@@ -137,12 +144,39 @@ app.use((req, res, next) => {
     res.sendFile(path.join(docsPath, "presentacion.html"));
   });
 
+  const loginAttempts = new Map();
+  function loginKey(req) {
+    return String(req.ip || req.headers["x-forwarded-for"] || "unknown").split(",")[0].trim();
+  }
+  function loginBlocked(key) {
+    const rec = loginAttempts.get(key);
+    if (!rec) return false;
+    if (Date.now() > rec.until) {
+      loginAttempts.delete(key);
+      return false;
+    }
+    return rec.count >= 8;
+  }
+  function loginFail(key) {
+    const rec = loginAttempts.get(key) || { count: 0, until: Date.now() + 15 * 60 * 1000 };
+    rec.count += 1;
+    rec.until = Date.now() + 15 * 60 * 1000;
+    loginAttempts.set(key, rec);
+  }
+
   app.get("/login", (req, res) => {
     if (req.session.user) return res.redirect("/");
     res.render("login", { title: "Iniciar sesión", error: null });
   });
 
   app.post("/login", (req, res) => {
+    const key = loginKey(req);
+    if (loginBlocked(key)) {
+      return res.status(429).render("login", {
+        title: "Iniciar sesión",
+        error: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo."
+      });
+    }
     const usuario = String(req.body.usuario || "").trim();
     const password = String(req.body.password || "");
     const row = get(
@@ -152,11 +186,13 @@ app.use((req, res, next) => {
       [usuario]
     );
     if (!row || !bcrypt.compareSync(password, row.password_hash)) {
+      loginFail(key);
       return res.status(401).render("login", {
         title: "Iniciar sesión",
         error: "Usuario o contraseña incorrectos."
       });
     }
+    loginAttempts.delete(key);
     req.session.user = {
       id: row.id,
       nombre: row.nombre,
@@ -528,10 +564,12 @@ app.use((req, res, next) => {
 
   app.get("/usuarios", requireAuth, requirePerm("usuarios"), (req, res) => {
     const usuarios = all(
-      `SELECT u.id, u.nombre, u.usuario, u.activo, r.nombre AS rol
+      `SELECT u.id, u.nombre, u.usuario, u.activo, r.nombre AS rol, r.clave AS rol_clave
        FROM usuarios u JOIN roles r ON r.id = u.rol_id ORDER BY u.nombre`
     );
-    const roles = all("SELECT * FROM roles ORDER BY id");
+    const roles = all("SELECT * FROM roles ORDER BY id").filter(
+      (r) => r.clave !== "superusuario" || isSuperuser(req.session.user)
+    );
     res.render("usuarios", { title: "Usuarios", usuarios, roles });
   });
 
@@ -540,8 +578,13 @@ app.use((req, res, next) => {
     const usuario = String(req.body.usuario || "").trim();
     const password = String(req.body.password || "");
     const rolId = Number(req.body.rol_id);
-    if (!nombre || !usuario || password.length < 6 || !rolId) {
-      flash(req, "error", "Completa nombre, usuario, rol y contraseña (mínimo 6).");
+    const rol = get("SELECT * FROM roles WHERE id = ?", [rolId]);
+    if (!nombre || !usuario || password.length < 8 || !rol) {
+      flash(req, "error", "Completa nombre, usuario, rol y contraseña (mínimo 8 caracteres).");
+      return res.redirect("/usuarios");
+    }
+    if (rol.clave === "superusuario" && !isSuperuser(req.session.user)) {
+      flash(req, "error", "Solo el superusuario puede asignar ese rol.");
       return res.redirect("/usuarios");
     }
     try {

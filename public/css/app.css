@@ -118,7 +118,12 @@ label { display: block; font-size: 14px; font-weight: 600; }
 }
 .login-card h1 { margin-bottom: 8px; }
 .login-card form { display: grid; gap: 12px; margin-top: 16px; }
-.demo-accounts { margin-top: 18px; display: grid; gap: 4px; font-size: 13px; color: #61706b; }
+.login-hint { margin-top: 18px; font-size: 13px; color: #61706b; }
+.login-card input[type="password"] { letter-spacing: 0.18em; }
+.role-badge {
+  display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px;
+  background: #efe6d4; color: var(--forest); font-size: 11px; letter-spacing: 0.04em;
+}
 .actions { display: flex; gap: 8px; }
 @media (max-width: 960px) {
   .shell, .split, .pos, .stats, .form-grid, .pay-row { grid-template-columns: 1fr; }

@@ -6,5 +6,10 @@ module.exports = {
     sucursal: "Tienda demo",
     moneda: "L",
     impuestoDefault: 0.15
+  },
+  superuser: {
+    nombre: process.env.SUPERUSER_NAME || "Ángel",
+    usuario: process.env.SUPERUSER_USER || "angel",
+    password: process.env.SUPERUSER_PASSWORD || "AngelDev#2026"
   }
 };

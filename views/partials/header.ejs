@@ -31,7 +31,7 @@
       <form class="sidebar-user" method="post" action="/logout">
         <div>
           <strong><%= user.nombre %></strong>
-          <small><%= user.rolNombre %></small>
+          <small><%= user.rolNombre %><% if (user.rol === "superusuario") { %> · desarrollador<% } %></small>
         </div>
         <button type="submit">Salir</button>
       </form>

@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const config = require("./config");
 
 function seedIfEmpty(database) {
   const { get, run, lastId, persist } = database;
@@ -8,7 +9,8 @@ function seedIfEmpty(database) {
     [1, "admin", "Administrador"],
     [2, "cajero", "Cajero"],
     [3, "bodeguero", "Bodeguero"],
-    [4, "gerente", "Gerente"]
+    [4, "gerente", "Gerente"],
+    [5, "superusuario", "Superusuario"]
   ];
   for (const [id, clave, nombre] of roles) {
     run("INSERT INTO roles (id, clave, nombre) VALUES (?, ?, ?)", [id, clave, nombre]);
@@ -71,4 +73,28 @@ function seedIfEmpty(database) {
   persist();
 }
 
-module.exports = { seedIfEmpty };
+function ensureSuperuser(database) {
+  const { get, run, lastId, persist } = database;
+  let rol = get("SELECT id FROM roles WHERE clave = ?", ["superusuario"]);
+  if (!rol) {
+    run("INSERT INTO roles (clave, nombre) VALUES (?, ?)", ["superusuario", "Superusuario"]);
+    rol = { id: lastId() };
+  }
+
+  const { nombre, usuario, password } = config.superuser;
+  const existente = get("SELECT id FROM usuarios WHERE usuario = ?", [usuario]);
+  if (existente) {
+    run(
+      "UPDATE usuarios SET nombre = ?, rol_id = ?, activo = 1 WHERE id = ?",
+      [nombre, rol.id, existente.id]
+    );
+  } else {
+    run(
+      "INSERT INTO usuarios (nombre, usuario, password_hash, rol_id, activo) VALUES (?, ?, ?, ?, 1)",
+      [nombre, usuario, bcrypt.hashSync(password, 10), rol.id]
+    );
+  }
+  persist();
+}
+
+module.exports = { seedIfEmpty, ensureSuperuser };

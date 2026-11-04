@@ -13,24 +13,18 @@
   <main class="login-card">
     <p class="eyebrow">Sistema de supermercado</p>
     <h1>MercadoOS</h1>
-    <p class="muted">Entra con tu usuario de empleado. El rol decide qué puedes hacer.</p>
+    <p class="muted">Entra con tu usuario. La contraseña queda oculta al escribir.</p>
     <% if (error) { %><div class="flash error"><%= error %></div><% } %>
-    <form method="post" action="/login">
+    <form method="post" action="/login" autocomplete="on">
       <label>Usuario
-        <input name="usuario" autocomplete="username" required autofocus />
+        <input name="usuario" autocomplete="username" spellcheck="false" autocapitalize="off" required autofocus />
       </label>
       <label>Contraseña
-        <input name="password" type="password" autocomplete="current-password" required />
+        <input name="password" type="password" autocomplete="current-password" spellcheck="false" required />
       </label>
       <button class="btn primary" type="submit">Entrar</button>
     </form>
-    <div class="demo-accounts">
-      <p>Cuentas de demo</p>
-      <code>admin / admin123</code>
-      <code>cajero / cajero123</code>
-      <code>bodeguero / bodeguero123</code>
-      <code>gerente / gerente123</code>
-    </div>
+    <p class="login-hint">No compartas tu contraseña. El sistema nunca la muestra en pantalla.</p>
   </main>
 </body>
 </html>
