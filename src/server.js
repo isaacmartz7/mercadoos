@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
-const session = require("express-session");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const config = require("./config");
 const { init, all, get, run, lastId, persist, transaction } = require("./db");
@@ -23,7 +23,7 @@ function can(user, perm) {
 }
 
 function requireAuth(req, res, next) {
-  if (!req.session.user) return res.redirect("/login");
+  if (!req.session || !req.session.user) return res.redirect("/login");
   next();
 }
 
@@ -70,12 +70,16 @@ const publicPath = findPath("public");
 app.use("/static", express.static(publicPath));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+const isVercel = Boolean(process.env.VERCEL);
 app.use(
-  session({
-    secret: config.sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 8 }
+  cookieSession({
+    name: "mercadoos_session",
+    keys: [config.sessionSecret],
+    maxAge: 1000 * 60 * 60 * 8,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: isVercel,
+    path: "/"
   })
 );
 
@@ -105,6 +109,7 @@ app.use((req, res, next) => {
 });
 
   app.use((req, res, next) => {
+    if (!req.session) req.session = {};
     res.locals.user = req.session.user || null;
     res.locals.config = config;
     res.locals.can = (perm) => can(req.session.user, perm);
@@ -159,14 +164,23 @@ app.use((req, res, next) => {
       rol: row.rol,
       rolNombre: row.rol_nombre
     };
-    res.redirect("/");
+    res.redirect(303, "/");
   });
 
+  function clearSession(res) {
+    res.clearCookie("mercadoos_session");
+    res.clearCookie("mercadoos_session.sig");
+  }
+
   app.post("/logout", requireAuth, (req, res) => {
-    req.session.destroy(() => res.redirect("/login"));
+    req.session = null;
+    clearSession(res);
+    res.redirect(303, "/login");
   });
   app.get("/logout", (req, res) => {
-    req.session.destroy(() => res.redirect("/login"));
+    req.session = null;
+    clearSession(res);
+    res.redirect(303, "/login");
   });
 
   app.get("/", requireAuth, (req, res) => {
