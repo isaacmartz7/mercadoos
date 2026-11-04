@@ -65,39 +65,88 @@
     render();
   }
 
-  async function search(q) {
+  let searchSeq = 0;
+  let highlight = -1;
+
+  function pickProduct(prod) {
+    if (!prod) return;
+    add(prod);
+    resultados.innerHTML = "";
+    buscar.value = "";
+    highlight = -1;
+    buscar.focus();
+  }
+
+  function paintHighlight() {
+    const buttons = resultados.querySelectorAll(".result");
+    buttons.forEach((btn, i) => btn.classList.toggle("is-active", i === highlight));
+    if (buttons[highlight]) buttons[highlight].scrollIntoView({ block: "nearest" });
+  }
+
+  async function search(q, instantAdd) {
+    const seq = ++searchSeq;
     const res = await fetch(`/api/productos?q=${encodeURIComponent(q)}`);
     const data = await res.json();
-    if (data.length === 1 && data[0].codigo_barras === q) {
-      add(data[0]);
-      resultados.innerHTML = "";
-      buscar.value = "";
+    if (seq !== searchSeq) return;
+    if (instantAdd && data.length === 1 && data[0].codigo_barras === q) {
+      pickProduct(data[0]);
       return;
     }
+    highlight = -1;
     resultados.innerHTML = data.length
       ? data
           .map(
             (p) => `<button type="button" class="result" data-id="${p.id}">
-              <span>${p.nombre}<br><small>${p.codigo_barras}</small></span>
+              <span>${p.nombre}<br><small>${p.codigo_barras} · quedan ${p.stock}</small></span>
               <strong>${fmt(p.precio_venta)}</strong>
             </button>`
           )
           .join("")
-      : `<p class="muted">No encontramos “${q}”. Prueba con el nombre o el código de barras.</p>`;
+      : `<p class="muted">No encontramos “${q}”. Sigue escribiendo o prueba el código.</p>`;
     resultados.querySelectorAll(".result").forEach((btn) => {
       btn.addEventListener("click", () => {
-        add(data.find((p) => String(p.id) === btn.dataset.id));
-        resultados.innerHTML = "";
-        buscar.value = "";
-        buscar.focus();
+        pickProduct(data.find((p) => String(p.id) === btn.dataset.id));
       });
     });
   }
 
+  let debounce;
+  buscar.addEventListener("input", () => {
+    const q = buscar.value.trim();
+    clearTimeout(debounce);
+    if (!q) {
+      searchSeq += 1;
+      resultados.innerHTML = "";
+      highlight = -1;
+      return;
+    }
+    debounce = setTimeout(() => search(q, false), 120);
+  });
+
+  buscar.addEventListener("keydown", (e) => {
+    const buttons = resultados.querySelectorAll(".result");
+    if (!buttons.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      highlight = (highlight + 1) % buttons.length;
+      paintHighlight();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      highlight = highlight <= 0 ? buttons.length - 1 : highlight - 1;
+      paintHighlight();
+    } else if (e.key === "Escape") {
+      resultados.innerHTML = "";
+      highlight = -1;
+    } else if (e.key === "Enter" && highlight >= 0) {
+      e.preventDefault();
+      buttons[highlight].click();
+    }
+  });
+
   document.getElementById("buscar-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const q = buscar.value.trim();
-    if (q) search(q);
+    if (q) search(q, true);
   });
 
   carritoEl.addEventListener("input", (e) => {

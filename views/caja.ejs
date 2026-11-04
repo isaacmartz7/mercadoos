@@ -5,14 +5,14 @@
       <div>
         <p class="eyebrow">Punto de venta</p>
         <h1>Caja</h1>
-        <p class="lede">Escribe el nombre o el código, pulsa Agregar y cobra cuando el ticket esté listo.</p>
+        <p class="lede">Escribe una letra y elige el producto de la lista. También puedes usar el código de barras.</p>
       </div>
     </header>
     <form id="buscar-form" class="scan-bar" autocomplete="off">
-      <input id="buscar" name="q" placeholder="Nombre o código de barras" aria-label="Buscar producto" autofocus />
+      <input id="buscar" name="q" placeholder="Empieza a escribir el producto..." aria-label="Buscar producto" autocomplete="off" autofocus />
       <button class="btn primary" type="submit">Agregar</button>
     </form>
-    <p class="hint">Si hay un solo resultado con ese código, se agrega solo. Si hay varios, elige de la lista.</p>
+    <p class="hint">Las sugerencias aparecen mientras escribes. Usa las flechas y Enter para elegir, o haz clic.</p>
     <div id="resultados" class="results"></div>
   </section>
   <aside class="pos-cart panel">

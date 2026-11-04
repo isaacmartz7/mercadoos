@@ -386,9 +386,14 @@ app.use((req, res, next) => {
       `SELECT p.id, p.codigo_barras, p.nombre, p.unidad, p.precio_venta, p.impuesto, p.stock
        FROM productos p
        WHERE p.activo=1 AND (p.codigo_barras = ? OR p.nombre LIKE ? OR p.codigo_barras LIKE ?)
-       ORDER BY CASE WHEN p.codigo_barras = ? THEN 0 ELSE 1 END, p.nombre
+       ORDER BY CASE
+         WHEN p.codigo_barras = ? THEN 0
+         WHEN p.nombre LIKE ? THEN 1
+         WHEN p.codigo_barras LIKE ? THEN 2
+         ELSE 3
+       END, p.nombre
        LIMIT 20`,
-      [q, `%${q}%`, `%${q}%`, q]
+      [q, `%${q}%`, `%${q}%`, q, `${q}%`, `${q}%`]
     );
     res.json(rows);
   });

@@ -130,6 +130,10 @@ label { display: block; font-size: 14px; font-weight: 600; }
 .result {
   background: #fff; border: 1px solid var(--line); border-radius: 12px;
   padding: 12px 14px; display: flex; justify-content: space-between; cursor: pointer;
+  text-align: left; width: 100%; font: inherit; color: inherit;
+}
+.result:hover, .result.is-active {
+  border-color: var(--leaf); background: #f6f3ea;
 }
 .cart { list-style: none; padding: 0; margin: 0 0 12px; min-height: 140px; }
 .cart li { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); align-items: center; }
