@@ -53,6 +53,50 @@ function round2(n) {
   return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 }
 
+function csvCell(value) {
+  const text = String(value ?? "");
+  if (/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+  return text;
+}
+
+function homeFor(user) {
+  return user && user.rol === "cajero" ? "/caja" : "/";
+}
+
+function turnoAbierto(userId) {
+  return get(
+    `SELECT * FROM turnos WHERE usuario_id=? AND estado='abierto' ORDER BY id DESC LIMIT 1`,
+    [userId]
+  );
+}
+
+function resumenTurno(turno) {
+  if (!turno) return null;
+  const efectivo = get(
+    `SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS total
+     FROM ventas
+     WHERE usuario_id=? AND estado='completada' AND metodo_pago='efectivo' AND fecha >= ?`,
+    [turno.usuario_id, turno.apertura]
+  );
+  const tarjeta = get(
+    `SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS total
+     FROM ventas
+     WHERE usuario_id=? AND estado='completada' AND metodo_pago='tarjeta' AND fecha >= ?`,
+    [turno.usuario_id, turno.apertura]
+  );
+  const ventasEfectivo = round2(efectivo.total);
+  return {
+    id: turno.id,
+    apertura: turno.apertura,
+    fondo: round2(turno.fondo),
+    ventasEfectivo,
+    ticketsEfectivo: efectivo.n,
+    ventasTarjeta: round2(tarjeta.total),
+    ticketsTarjeta: tarjeta.n,
+    esperado: round2(turno.fondo + ventasEfectivo)
+  };
+}
+
 const app = express();
 app.set("trust proxy", 1);
 function findPath(subDir) {
@@ -165,7 +209,7 @@ app.use((req, res, next) => {
   }
 
   app.get("/login", (req, res) => {
-    if (req.session.user) return res.redirect("/");
+    if (req.session.user) return res.redirect(homeFor(req.session.user));
     res.render("login", { title: "Iniciar sesión", error: null });
   });
 
@@ -200,7 +244,7 @@ app.use((req, res, next) => {
       rol: row.rol,
       rolNombre: row.rol_nombre
     };
-    res.redirect(303, "/");
+    res.redirect(303, homeFor(req.session.user));
   });
 
   function clearSession(res) {
@@ -220,6 +264,7 @@ app.use((req, res, next) => {
   });
 
   app.get("/", requireAuth, (req, res) => {
+    if (req.session.user.rol === "cajero") return res.redirect("/caja");
     const ventasHoy = get(
       `SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS total
        FROM ventas WHERE date(fecha)=date('now','localtime') AND estado='completada'`
@@ -344,7 +389,14 @@ app.use((req, res, next) => {
       title: "Inventario",
       productos,
       movimientos,
-      puedeAjustar: can(req.session.user, "inventarioAjuste")
+      puedeAjustar: can(req.session.user, "inventarioAjuste"),
+      productosAjuste: productos.map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        codigo: p.codigo_barras,
+        stock: p.stock,
+        unidad: p.unidad
+      }))
     });
   });
 
@@ -376,7 +428,70 @@ app.use((req, res, next) => {
   });
 
   app.get("/caja", requireAuth, requirePerm("caja"), (req, res) => {
-    res.render("caja", { title: "Caja" });
+    const turno = resumenTurno(turnoAbierto(req.session.user.id));
+    const ultima = get(
+      "SELECT id FROM ventas WHERE usuario_id=? ORDER BY id DESC LIMIT 1",
+      [req.session.user.id]
+    );
+    res.render("caja", {
+      title: "Caja",
+      turno,
+      ultimaVentaId: ultima ? ultima.id : null
+    });
+  });
+
+  app.get("/api/turno", requireAuth, requirePerm("caja"), (req, res) => {
+    res.json({ turno: resumenTurno(turnoAbierto(req.session.user.id)) });
+  });
+
+  app.post("/api/turno/abrir", requireAuth, requirePerm("caja"), (req, res) => {
+    const fondo = Number(req.body.fondo);
+    if (!Number.isFinite(fondo) || fondo < 0) {
+      return res.status(400).json({ error: "El fondo inicial no es válido." });
+    }
+    if (turnoAbierto(req.session.user.id)) {
+      return res.status(400).json({ error: "Ya tienes un turno abierto." });
+    }
+    const id = transaction(() => {
+      run(
+        `INSERT INTO turnos (usuario_id, apertura, fondo, estado)
+         VALUES (?, datetime('now','localtime'), ?, 'abierto')`,
+        [req.session.user.id, round2(fondo)]
+      );
+      return lastId();
+    });
+    const turno = get("SELECT * FROM turnos WHERE id=?", [id]);
+    res.json({ ok: true, turno: resumenTurno(turno) });
+  });
+
+  app.post("/api/turno/cerrar", requireAuth, requirePerm("caja"), (req, res) => {
+    const contado = Number(req.body.contado);
+    const abierto = turnoAbierto(req.session.user.id);
+    if (!abierto) return res.status(400).json({ error: "No hay un turno abierto." });
+    if (!Number.isFinite(contado) || contado < 0) {
+      return res.status(400).json({ error: "El efectivo contado no es válido." });
+    }
+    const resumen = resumenTurno(abierto);
+    const contadoRedondo = round2(contado);
+    const diferencia = round2(contadoRedondo - resumen.esperado);
+    transaction(() => {
+      run(
+        `UPDATE turnos
+         SET cierre=datetime('now','localtime'), ventas_efectivo=?, esperado=?, contado=?, diferencia=?, estado='cerrado'
+         WHERE id=?`,
+        [resumen.ventasEfectivo, resumen.esperado, contadoRedondo, diferencia, abierto.id]
+      );
+    });
+    res.json({
+      ok: true,
+      cierre: {
+        fondo: resumen.fondo,
+        ventasEfectivo: resumen.ventasEfectivo,
+        esperado: resumen.esperado,
+        contado: contadoRedondo,
+        diferencia
+      }
+    });
   });
 
   app.get("/api/productos", requireAuth, requirePerm("caja"), (req, res) => {
@@ -404,9 +519,12 @@ app.use((req, res, next) => {
     const descuento = Math.max(0, Number(req.body.descuento) || 0);
     const recibido = Number(req.body.recibido);
     if (!items.length) return res.status(400).json({ error: "La venta no tiene productos." });
+    if (!turnoAbierto(req.session.user.id)) {
+      return res.status(400).json({ error: "Abre el turno antes de cobrar." });
+    }
 
     try {
-      const ventaId = transaction(() => {
+      const venta = transaction(() => {
         let subtotal = 0;
         let impuesto = 0;
         const lineas = [];
@@ -461,9 +579,15 @@ app.use((req, res, next) => {
             [linea.producto.id, -linea.cantidad, linea.producto.stock, nuevo, `venta #${id}`, req.session.user.id]
           );
         }
-        return id;
+        return { id, total, cambio, metodo };
       });
-      res.json({ ok: true, ventaId });
+      res.json({
+        ok: true,
+        ventaId: venta.id,
+        total: venta.total,
+        cambio: venta.cambio,
+        metodo: venta.metodo
+      });
     } catch (error) {
       res.status(400).json({ error: error.message || "No se pudo completar la venta." });
     }
@@ -497,7 +621,12 @@ app.use((req, res, next) => {
        WHERE d.venta_id=?`,
       [venta.id]
     );
-    res.render("venta-detalle", { title: `Venta #${venta.id}`, venta, detalle });
+    res.render("venta-detalle", {
+      title: `Venta #${venta.id}`,
+      venta,
+      detalle,
+      imprimir: req.query.imprimir === "1"
+    });
   });
 
   app.post("/ventas/:id/anular", requireAuth, requirePerm("anular"), (req, res) => {
@@ -529,6 +658,32 @@ app.use((req, res, next) => {
     res.redirect(`/ventas/${venta.id}`);
   });
 
+  app.get("/reportes/csv", requireAuth, requirePerm("reportes"), (req, res) => {
+    const rows = all(
+      `SELECT v.id, v.fecha, u.nombre AS cajero, v.metodo_pago, v.total
+       FROM ventas v JOIN usuarios u ON u.id = v.usuario_id
+       WHERE v.estado='completada' AND date(v.fecha)=date('now','localtime')
+       ORDER BY v.id`
+    );
+    const lines = ["fecha,ticket,cajero,metodo,total"];
+    for (const row of rows) {
+      lines.push(
+        [
+          row.fecha,
+          row.id,
+          row.cajero,
+          row.metodo_pago === "tarjeta" ? "Tarjeta" : "Efectivo",
+          money(row.total)
+        ]
+          .map(csvCell)
+          .join(",")
+      );
+    }
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="ventas-hoy.csv"');
+    res.send(`\uFEFF${lines.join("\r\n")}`);
+  });
+
   app.get("/reportes", requireAuth, requirePerm("reportes"), (req, res) => {
     const hoy = get(
       `SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS total
@@ -557,13 +712,42 @@ app.use((req, res, next) => {
        FROM productos p LEFT JOIN categorias c ON c.id = p.categoria_id
        WHERE p.activo=1 AND p.stock <= p.stock_minimo ORDER BY p.stock ASC`
     );
+    const margenRow = get(
+      `SELECT COALESCE(SUM(d.subtotal - d.cantidad * p.costo), 0) AS bruto
+       FROM detalle_ventas d
+       JOIN ventas v ON v.id = d.venta_id
+       JOIN productos p ON p.id = d.producto_id
+       WHERE v.estado='completada' AND date(v.fecha)=date('now','localtime')`
+    );
+    const descuentosHoy = get(
+      `SELECT COALESCE(SUM(descuento), 0) AS total
+       FROM ventas WHERE estado='completada' AND date(fecha)=date('now','localtime')`
+    );
+    const margen = round2(margenRow.bruto - descuentosHoy.total);
+    const sinMovimientoWhere = `p.activo=1 AND NOT EXISTS (
+         SELECT 1 FROM detalle_ventas d
+         JOIN ventas v ON v.id = d.venta_id
+         WHERE d.producto_id = p.id AND v.estado='completada'
+           AND date(v.fecha) >= date('now','localtime','-30 day')
+       )`;
+    const sinMovimientoN = get(`SELECT COUNT(*) AS n FROM productos p WHERE ${sinMovimientoWhere}`).n;
+    const sinMovimiento = all(
+      `SELECT p.nombre, p.stock, p.unidad
+       FROM productos p
+       WHERE ${sinMovimientoWhere}
+       ORDER BY p.stock DESC, p.nombre
+       LIMIT 8`
+    );
     res.render("reportes", {
       title: "Reportes",
       hoy,
       semana,
       porCajero,
       masVendidos,
-      stockBajo
+      stockBajo,
+      margen,
+      sinMovimiento,
+      sinMovimientoN
     });
   });
 

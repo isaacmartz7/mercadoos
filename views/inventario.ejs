@@ -8,23 +8,32 @@
 </header>
 
 <% if (puedeAjustar) { %>
-<form class="panel form-inline" method="post" action="/inventario/ajuste">
-  <p class="hint form-intro">Para entrar mercadería usa un número positivo. Para salida o merma usa un número negativo.</p>
-  <label>Producto
-    <select name="producto_id" required>
-      <% productos.forEach(function (p) { %>
-        <option value="<%= p.id %>"><%= p.nombre %> (hay <%= money(p.stock) %>)</option>
-      <% }) %>
-    </select>
-  </label>
-  <label>Cantidad
-    <input name="cantidad" type="number" step="0.01" required placeholder="+10 o -2" />
-  </label>
-  <label>Motivo
-    <input name="motivo" placeholder="Recepción, conteo, merma..." required />
-  </label>
-  <button class="btn primary" type="submit">Registrar ajuste</button>
+<form id="ajuste-form" class="panel ajuste-form" method="post" action="/inventario/ajuste">
+  <p class="hint form-intro">Para entrar mercadería usa un número positivo. Para salida o merma usa un número negativo. Escribe el producto y elígelo de la lista.</p>
+  <div class="ajuste-pick">
+    <label>Producto
+      <input id="ajuste-buscar" type="text" placeholder="Escribe el nombre o el código..." autocomplete="off" />
+    </label>
+    <div id="ajuste-resultados" class="results"></div>
+    <p id="ajuste-elegido" class="hint"></p>
+    <input type="hidden" name="producto_id" id="ajuste-id" />
+  </div>
+  <div class="form-inline">
+    <label>Cantidad
+      <input name="cantidad" type="number" step="0.01" required placeholder="+10 o -2" />
+    </label>
+    <label>Motivo
+      <input name="motivo" placeholder="Recepción, conteo, merma..." required />
+    </label>
+    <button class="btn primary" type="submit">Registrar ajuste</button>
+  </div>
 </form>
+<script>
+  window.PRODUCTOS_AJUSTE = <%- JSON.stringify(productos.map(function (p) {
+    return { id: p.id, nombre: p.nombre, codigo_barras: p.codigo_barras, stock: p.stock, unidad: p.unidad };
+  })).replace(/</g, "\\u003c") %>;
+</script>
+<script src="/static/js/inventario.js"></script>
 <% } else { %>
   <p class="hint">Puedes consultar existencias. Solo bodega o administración registra ajustes.</p>
 <% } %>

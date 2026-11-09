@@ -13,7 +13,7 @@
   <div class="shell">
     <header class="topbar">
       <button class="menu-toggle" type="button" id="menu-toggle" aria-controls="sidebar" aria-expanded="false">Menú</button>
-      <a class="brand brand-compact" href="/">
+      <a class="brand brand-compact" href="<%= user.rol === 'cajero' ? '/caja' : '/' %>">
         <span class="brand-mark">M</span>
         <strong><%= config.negocio.nombre %></strong>
       </a>
@@ -21,7 +21,7 @@
     </header>
     <div class="nav-backdrop" id="nav-backdrop" hidden></div>
     <aside class="sidebar" id="sidebar">
-      <a class="brand" href="/">
+      <a class="brand" href="<%= user.rol === 'cajero' ? '/caja' : '/' %>">
         <span class="brand-mark">M</span>
         <span>
           <strong><%= config.negocio.nombre %></strong>
@@ -30,7 +30,7 @@
       </a>
       <p class="nav-label">Menú</p>
       <nav>
-        <a href="/" class="<%= typeof nav !== 'undefined' && nav === 'inicio' ? 'active' : '' %>" title="Resumen del día">Inicio</a>
+        <% if (user.rol !== 'cajero') { %><a href="/" class="<%= typeof nav !== 'undefined' && nav === 'inicio' ? 'active' : '' %>" title="Resumen del día">Inicio</a><% } %>
         <% if (can('caja')) { %><a href="/caja" class="<%= typeof nav !== 'undefined' && nav === 'caja' ? 'active' : '' %>" title="Cobrar productos">Caja</a><% } %>
         <% if (can('productos')) { %><a href="/productos" class="<%= typeof nav !== 'undefined' && nav === 'productos' ? 'active' : '' %>" title="Ver y editar el catálogo">Productos</a><% } %>
         <% if (can('inventario')) { %><a href="/inventario" class="<%= typeof nav !== 'undefined' && nav === 'inventario' ? 'active' : '' %>" title="Existencias y ajustes">Inventario</a><% } %>

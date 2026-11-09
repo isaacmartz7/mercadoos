@@ -40,4 +40,7 @@
     </form>
   <% } %>
 </section>
+<% if (imprimir) { %>
+<script>window.addEventListener("load", function () { window.print(); });</script>
+<% } %>
 <%- include("partials/footer") %>

@@ -150,6 +150,20 @@ function createSchema() {
       fecha TEXT NOT NULL,
       FOREIGN KEY (producto_id) REFERENCES productos(id)
     );
+
+    CREATE TABLE IF NOT EXISTS turnos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario_id INTEGER NOT NULL,
+      apertura TEXT NOT NULL,
+      fondo REAL NOT NULL,
+      cierre TEXT,
+      ventas_efectivo REAL,
+      esperado REAL,
+      contado REAL,
+      diferencia REAL,
+      estado TEXT NOT NULL DEFAULT 'abierto',
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    );
   `);
 }
 

@@ -1,22 +1,69 @@
 <%- include("partials/header") %>
+<section class="turno-bar panel" id="turno-bar">
+  <p id="turno-error" class="flash error hidden"></p>
+  <p id="turno-ok" class="flash ok hidden"></p>
+  <div id="turno-cerrado">
+    <p class="hint form-intro">Abre el turno con el efectivo del fondo para poder cobrar.</p>
+    <form id="abrir-turno" class="form-inline">
+      <label>Fondo de caja (<%= config.negocio.moneda %>)
+        <input id="fondo" type="number" min="0" step="0.01" value="0" required />
+      </label>
+      <button class="btn primary" type="submit">Abrir turno</button>
+    </form>
+  </div>
+  <div id="turno-abierto" class="hidden">
+    <div class="turno-head">
+      <p>Turno abierto desde <strong id="turno-desde"></strong>. Fondo <strong id="turno-fondo"></strong>.</p>
+      <button class="btn" type="button" id="mostrar-cierre">Cerrar turno</button>
+    </div>
+    <form id="cerrar-turno" class="hidden">
+      <p>Efectivo vendido: <strong id="turno-efectivo"></strong></p>
+      <p>Tarjeta: <strong id="turno-tarjeta"></strong></p>
+      <p>Esperado en caja: <strong id="turno-esperado"></strong> <span class="hint">fondo + efectivo</span></p>
+      <label>Efectivo contado
+        <input id="contado" type="number" min="0" step="0.01" required />
+      </label>
+      <p>Diferencia: <strong id="turno-diferencia">—</strong></p>
+      <button class="btn primary" type="submit">Confirmar cierre</button>
+    </form>
+  </div>
+</section>
 <div class="pos">
   <section class="pos-left">
     <header class="page-head compact">
       <div>
         <p class="eyebrow">Punto de venta</p>
         <h1>Caja</h1>
-        <p class="lede">Escribe una letra y elige el producto de la lista. También puedes usar el código de barras.</p>
+        <p class="lede">Escribe una letra y elige el producto, o pasa el código de barras. F2 busca y F4 cobra.</p>
       </div>
     </header>
     <form id="buscar-form" class="scan-bar" autocomplete="off">
       <input id="buscar" name="q" placeholder="Empieza a escribir el producto..." aria-label="Buscar producto" autocomplete="off" autofocus />
       <button class="btn primary" type="submit">Agregar</button>
     </form>
-    <p class="hint">Las sugerencias aparecen mientras escribes. Usa las flechas y Enter para elegir, o haz clic.</p>
+    <p class="hint">Las sugerencias aparecen mientras escribes. Usa las flechas y Enter para elegir, o haz clic. Esc limpia la búsqueda.</p>
     <div id="resultados" class="results"></div>
   </section>
   <aside class="pos-cart panel">
-    <h2>Ticket</h2>
+    <div id="recibo" class="recibo hidden" role="status">
+      <p class="eyebrow">Cobrado</p>
+      <p>Venta #<span id="recibo-id"></span></p>
+      <p class="grand" id="recibo-total"></p>
+      <p>Cambio a entregar: <strong id="recibo-cambio"></strong></p>
+      <div class="actions">
+        <a id="recibo-print" class="btn" target="_blank" rel="noopener">Imprimir</a>
+        <button id="recibo-listo" class="btn primary" type="button">Nueva venta</button>
+      </div>
+    </div>
+    <div id="consulta" class="consulta hidden"></div>
+    <div id="espera-wrap" class="espera hidden">
+      <p class="eyebrow">En espera</p>
+      <ul id="espera-lista" class="espera-lista"></ul>
+    </div>
+    <div class="ticket-head">
+      <h2>Ticket</h2>
+      <a id="reimprimir" class="btn hidden" target="_blank" rel="noopener">Reimprimir último</a>
+    </div>
     <ul id="carrito" class="cart"></ul>
     <label class="discount">Descuento (<%= config.negocio.moneda %>)
       <input id="descuento" type="number" min="0" step="0.01" value="0" />
@@ -33,16 +80,34 @@
           <option value="tarjeta">Tarjeta</option>
         </select>
       </label>
-      <label id="wrap-recibido">Dinero recibido
-        <input id="recibido" type="number" min="0" step="0.01" placeholder="0.00" />
-      </label>
+      <div id="wrap-recibido">
+        <label>Dinero recibido
+          <input id="recibido" type="number" min="0" step="0.01" placeholder="0.00" />
+        </label>
+        <div class="bills" id="billetes">
+          <button type="button" data-bill="exacto">Exacto</button>
+          <button type="button" data-bill="20">20</button>
+          <button type="button" data-bill="50">50</button>
+          <button type="button" data-bill="100">100</button>
+          <button type="button" data-bill="200">200</button>
+          <button type="button" data-bill="500">500</button>
+        </div>
+      </div>
     </div>
     <p class="cambio">Cambio a entregar: <strong id="cambio">L 0.00</strong></p>
     <p id="pos-error" class="flash error hidden"></p>
-    <button id="cobrar" class="btn primary big" type="button">Cobrar</button>
-    <p class="hint">Al cobrar se descuenta el stock de cada producto.</p>
+    <div class="charge-row">
+      <button id="esperar" class="btn" type="button">Esperar</button>
+      <button id="cobrar" class="btn primary big" type="button">Cobrar</button>
+    </div>
+    <p class="hint">Al cobrar se descuenta el stock. Esperar guarda el ticket si el cliente se aparta.</p>
   </aside>
 </div>
-<script>window.MONEDA = "<%= config.negocio.moneda %>";</script>
+<script>
+  window.MONEDA = "<%= config.negocio.moneda %>";
+  window.USER_ID = <%= Number(user.id) %>;
+  window.TURNO = <%- JSON.stringify(turno || null).replace(/</g, "\\u003c") %>;
+  window.ULTIMA_VENTA = <%= ultimaVentaId == null ? "null" : Number(ultimaVentaId) %>;
+</script>
 <script src="/static/js/caja.js"></script>
 <%- include("partials/footer") %>

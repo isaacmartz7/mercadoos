@@ -3,8 +3,9 @@
   <div>
     <p class="eyebrow">Gerencia</p>
     <h1>Reportes</h1>
-    <p class="lede">Totales del día, de la semana, desempeño por cajero y productos que hay que reponer.</p>
+    <p class="lede">Totales del día, margen aproximado, productos quietos y el CSV para cuadrar.</p>
   </div>
+  <a class="btn" href="/reportes/csv">Descargar CSV</a>
 </header>
 
 <section class="stats">
@@ -17,6 +18,11 @@
     <span>Últimos 7 días</span>
     <strong><%= config.negocio.moneda %> <%= money(semana.total) %></strong>
     <small><%= semana.n === 1 ? "1 venta" : semana.n + " ventas" %></small>
+  </article>
+  <article class="stat">
+    <span>Margen de hoy</span>
+    <strong><%= config.negocio.moneda %> <%= money(margen) %></strong>
+    <small>Venta menos costo, ya restando descuentos</small>
   </article>
 </section>
 
@@ -64,6 +70,28 @@
     <% } %>
   </section>
 </div>
+
+<section class="panel">
+  <h2>Sin movimiento (30 días)</h2>
+  <% if (!sinMovimientoN) { %>
+    <p class="muted">Todos los productos activos se vendieron en el último mes.</p>
+  <% } else { %>
+    <p class="hint"><%= sinMovimientoN === 1 ? "1 producto activo" : sinMovimientoN + " productos activos" %> sin ventas en los últimos 30 días.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Producto</th><th>Stock</th></tr></thead>
+        <tbody>
+          <% sinMovimiento.forEach(function (p) { %>
+            <tr>
+              <td><%= p.nombre %></td>
+              <td><%= money(p.stock) %> <%= p.unidad %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
 
 <section class="panel">
   <h2>Stock bajo</h2>
