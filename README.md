@@ -43,7 +43,7 @@ Abre [http://localhost:3000](http://localhost:3000)
 - Historial de ventas
 - Reportes (día, más vendidos, stock bajo, por cajero)
 - Kardex de inventario
-- Usuarios (admin y superusuario)
+- Usuarios y roles (admin, cajero, bodeguero, gerente)
 
 ## Despliegue en Vercel
 

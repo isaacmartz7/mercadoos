@@ -1,46 +1,66 @@
 <%- include("partials/header") %>
-<header class="page-head">
-  <div>
-    <p class="eyebrow">Ticket</p>
-    <h1>Venta #<%= venta.id %></h1>
-  </div>
-  <div class="actions">
-    <button class="btn" type="button" onclick="window.print()">Imprimir</button>
-    <a class="btn" href="/ventas">Volver a ventas</a>
-  </div>
-</header>
-
-<section class="panel ticket">
-  <p><strong><%= config.negocio.nombre %></strong> · <%= venta.fecha %></p>
-  <p>Cajero: <%= venta.cajero %> · <%= venta.metodo_pago === "tarjeta" ? "Tarjeta" : "Efectivo" %> · <%= venta.estado === "anulada" ? "Anulada" : "Completada" %></p>
-  <table>
-    <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
-    <tbody>
-      <% detalle.forEach(function (d) { %>
-        <tr>
-          <td><%= d.nombre %><br /><code><%= d.codigo_barras %></code></td>
-          <td><%= money(d.cantidad) %> <%= d.unidad %></td>
-          <td><%= config.negocio.moneda %> <%= money(d.precio_unitario) %></td>
-          <td><%= config.negocio.moneda %> <%= money(d.subtotal) %></td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <dl class="totals">
-    <div><dt>Subtotal</dt><dd><%= config.negocio.moneda %> <%= money(venta.subtotal) %></dd></div>
-    <div><dt>ISV</dt><dd><%= config.negocio.moneda %> <%= money(venta.impuesto) %></dd></div>
-    <div><dt>Descuento</dt><dd><%= config.negocio.moneda %> <%= money(venta.descuento) %></dd></div>
-    <div class="grand"><dt>Total</dt><dd><%= config.negocio.moneda %> <%= money(venta.total) %></dd></div>
-    <div><dt>Recibido</dt><dd><%= config.negocio.moneda %> <%= money(venta.recibido) %></dd></div>
-    <div><dt>Cambio</dt><dd><%= config.negocio.moneda %> <%= money(venta.cambio) %></dd></div>
-  </dl>
+<div class="preview-chrome">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow"><%= venta.estado === "devolucion" ? "Devolución" : "Vista previa" %></p>
+      <h1><%= venta.estado === "devolucion" ? "Devolución" : "Ticket" %> #<%= venta.id %></h1>
+      <p class="lede"><%= venta.estado === "devolucion" ? "Comprobante de la devolución. Revisa el recibo y, cuando esté bien, pulsa Imprimir." : "Así saldrá en el papel. Revisa el recibo y, cuando esté bien, pulsa Imprimir." %></p>
+    </div>
+    <div class="actions">
+      <button class="btn primary" type="button" onclick="window.print()">Imprimir</button>
+      <% if (can('caja')) { %><a class="btn" href="/caja">Volver a caja</a><% } %>
+      <a class="btn" href="/ventas">Volver a ventas</a>
+    </div>
+  </header>
   <% if (venta.estado === 'completada' && can('anular')) { %>
-    <form method="post" action="/ventas/<%= venta.id %>/anular" onsubmit="return confirm('¿Anular y devolver el stock?');">
+    <form class="preview-anular" method="post" action="/ventas/<%= venta.id %>/anular" onsubmit="return confirm('¿Anular y devolver el stock?');">
       <button class="btn danger" type="submit">Anular venta</button>
     </form>
   <% } %>
-</section>
-<% if (imprimir) { %>
-<script>window.addEventListener("load", function () { window.print(); });</script>
-<% } %>
+</div>
+
+<div class="preview-stage">
+  <article class="ticket-paper" aria-label="Vista previa del ticket">
+    <header class="ticket-paper-head">
+      <p class="store"><%= config.negocio.nombre %></p>
+      <p class="branch"><%= config.negocio.sucursal %></p>
+      <p class="meta"><%= venta.estado === "devolucion" ? "Devolución" : "Ticket" %> #<%= venta.id %></p>
+      <p class="meta"><%= venta.fecha %></p>
+      <p class="meta">Cajero: <%= venta.cajero %></p>
+      <p class="meta"><%= venta.estado === "anulada" ? "Anulada" : venta.estado === "devolucion" ? "Devolución" : "Completada" %></p>
+    </header>
+
+    <ul class="ticket-lines">
+      <% detalle.forEach(function (d) { %>
+        <li>
+          <p class="line-name"><%= d.nombre %></p>
+          <p class="line-detail">
+            <span><%= money(d.cantidad) %> <%= d.unidad %> × <%= config.negocio.moneda %> <%= money(d.precio_unitario) %></span>
+            <strong><%= config.negocio.moneda %> <%= money(d.subtotal) %></strong>
+          </p>
+          <% if (d.codigo_barras) { %><p class="line-code"><%= d.codigo_barras %></p><% } %>
+        </li>
+      <% }) %>
+    </ul>
+
+    <dl class="ticket-totals">
+      <div><dt>Subtotal</dt><dd><%= config.negocio.moneda %> <%= money(venta.subtotal) %></dd></div>
+      <div><dt>ISV</dt><dd><%= config.negocio.moneda %> <%= money(venta.impuesto) %></dd></div>
+      <div><dt>Descuento</dt><dd><%= config.negocio.moneda %> <%= money(venta.descuento) %></dd></div>
+      <div class="grand"><dt><%= venta.estado === "devolucion" ? "Total devuelto" : "Total" %></dt><dd><%= config.negocio.moneda %> <%= money(venta.total) %></dd></div>
+    </dl>
+
+    <dl class="ticket-pay">
+      <div><dt>Pago</dt><dd><%= venta.metodo_pago === "tarjeta" ? "Tarjeta" : "Efectivo" %></dd></div>
+      <% if (venta.estado === "devolucion") { %>
+        <div><dt>Entregado al cliente</dt><dd><%= config.negocio.moneda %> <%= money(venta.recibido) %></dd></div>
+      <% } else { %>
+        <div><dt>Recibido</dt><dd><%= config.negocio.moneda %> <%= money(venta.recibido) %></dd></div>
+        <div><dt>Cambio</dt><dd><%= config.negocio.moneda %> <%= money(venta.cambio) %></dd></div>
+      <% } %>
+    </dl>
+
+    <p class="ticket-thanks"><%= venta.estado === "devolucion" ? "Devolución registrada" : "Gracias por su compra" %></p>
+  </article>
+</div>
 <%- include("partials/footer") %>

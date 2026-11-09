@@ -1,0 +1,185 @@
+<%- include("partials/header") %>
+<header class="page-head">
+  <div>
+    <p class="eyebrow">Tienda</p>
+    <h1>Asistente</h1>
+    <p class="lede">Pregunta con frases cortas. Las cifras salen de la base. Un cambio de stock solo se anota cuando respondes que sí.</p>
+  </div>
+  <% if (puedeReportes) { %>
+    <a class="btn" href="/reportes/csv">Descargar CSV de hoy</a>
+  <% } %>
+</header>
+
+<% if (puedeReportes) { %>
+<section class="panel">
+  <h2>Totales</h2>
+  <div class="periodo-nav">
+    <a class="btn <%= periodo === 'dia' ? 'primary' : '' %>" href="/asistente?periodo=dia">Día</a>
+    <a class="btn <%= periodo === 'mes' ? 'primary' : '' %>" href="/asistente?periodo=mes">Mes</a>
+    <a class="btn <%= periodo === 'ano' ? 'primary' : '' %>" href="/asistente?periodo=ano">Año</a>
+  </div>
+  <form class="toolbar" method="get" action="/asistente">
+    <input type="hidden" name="periodo" value="rango" />
+    <label>Desde
+      <input type="date" name="desde" value="<%= desde %>" required />
+    </label>
+    <label>Hasta
+      <input type="date" name="hasta" value="<%= hasta %>" required />
+    </label>
+    <button class="btn <%= periodo === 'rango' ? 'primary' : '' %>" type="submit">Ver rango</button>
+  </form>
+  <% if (errorRango) { %>
+    <p class="hint"><%= errorRango %></p>
+  <% } else { %>
+    <p class="hint">Periodo: <%= etiqueta %>.</p>
+    <section class="stats">
+      <article class="stat">
+        <span>Ventas <%= etiqueta.toLowerCase() %></span>
+        <strong><%= config.negocio.moneda %> <%= money(resumen.neto) %></strong>
+        <small>
+          <% if (Number(resumen.devoluciones) > 0) { %>
+            Bruto <%= config.negocio.moneda %> <%= money(resumen.ventas) %>, menos <%= config.negocio.moneda %> <%= money(resumen.devoluciones) %> en devoluciones
+          <% } else { %>
+            Sin devoluciones en el periodo
+          <% } %>
+        </small>
+      </article>
+      <article class="stat">
+        <span>Tickets</span>
+        <strong><%= resumen.tickets %></strong>
+        <small><%= Number(resumen.tickets) === 1 ? "venta completada" : "ventas completadas" %></small>
+      </article>
+      <article class="stat">
+        <% if (Number(resumen.devoluciones) > 0) { %>
+          <span>Devoluciones</span>
+          <strong>− <%= config.negocio.moneda %> <%= money(resumen.devoluciones) %></strong>
+          <small><%= Number(resumen.nDevoluciones) === 1 ? "1 nota" : resumen.nDevoluciones + " notas" %></small>
+        <% } else { %>
+          <span>Margen</span>
+          <strong><%= config.negocio.moneda %> <%= money(margen) %></strong>
+          <small>Venta menos costo, ya restando descuentos</small>
+        <% } %>
+      </article>
+    </section>
+    <% if (periodo === 'dia') { %>
+      <p class="hint">Últimos 7 días: <%= config.negocio.moneda %> <%= money(semana.neto) %> en <%= semana.tickets %> <%= Number(semana.tickets) === 1 ? "ticket" : "tickets" %>.</p>
+    <% } %>
+  <% } %>
+</section>
+
+<% if (!errorRango) { %>
+<div class="split">
+  <section class="panel">
+    <h2>Por cajero</h2>
+    <% if (!porCajero.length) { %>
+      <div class="empty"><p>No hay ventas en este periodo.</p></div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cajero</th><th>Tickets</th><th>Total</th></tr></thead>
+          <tbody>
+            <% porCajero.forEach(function (r) { %>
+              <tr>
+                <td><%= r.nombre %></td>
+                <td><%= r.n %></td>
+                <td><%= config.negocio.moneda %> <%= money(r.total) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+  <section class="panel">
+    <h2>Más vendidos</h2>
+    <% if (!masVendidos.length) { %>
+      <div class="empty"><p>Aún no hay productos vendidos en este periodo.</p></div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Producto</th><th>Cant.</th><th>Total</th></tr></thead>
+          <tbody>
+            <% masVendidos.forEach(function (r) { %>
+              <tr>
+                <td><%= r.nombre %></td>
+                <td><%= money(r.cantidad) %></td>
+                <td><%= config.negocio.moneda %> <%= money(r.total) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Sin movimiento (30 días)</h2>
+  <% if (!sinMovimientoN) { %>
+    <p class="muted">Todos los productos activos se vendieron en el último mes.</p>
+  <% } else { %>
+    <p class="hint"><%= sinMovimientoN === 1 ? "1 producto activo" : sinMovimientoN + " productos activos" %> sin ventas en los últimos 30 días.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Producto</th><th>Stock</th></tr></thead>
+        <tbody>
+          <% sinMovimiento.forEach(function (p) { %>
+            <tr>
+              <td><%= p.nombre %></td>
+              <td><%= money(p.stock) %> <%= p.unidad %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<section class="panel">
+  <h2>Stock bajo</h2>
+  <% if (!stockBajo.length) { %>
+    <p class="muted">Ningún producto está bajo el mínimo.</p>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mínimo</th></tr></thead>
+        <tbody>
+          <% stockBajo.forEach(function (p) { %>
+            <tr class="row-warn">
+              <td><%= p.nombre %></td>
+              <td><%= p.categoria || "—" %></td>
+              <td><%= money(p.stock) %></td>
+              <td><%= money(p.stock_minimo) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+<% } %>
+<% } %>
+
+<section class="panel asistente-panel">
+  <h2>Chat</h2>
+  <div class="chat-log" id="chat-log">
+    <% if (!mensajes.length) { %>
+      <p class="chat-msg bot">Puedes preguntar «cuánta leche queda», «qué está por acabarse», «cuánto se vendió hoy» o «movimientos de la leche». Para anotar: «entraron 12 leches» o «la leche queda en 5».</p>
+    <% } %>
+    <% mensajes.forEach(function (mensaje) { %>
+      <p class="chat-msg <%= mensaje.quien === 'tu' ? 'user' : 'bot' %>"><%= mensaje.texto %></p>
+    <% }) %>
+  </div>
+  <form class="chat-form" method="post" action="/asistente">
+    <input type="hidden" name="periodo" value="<%= periodo %>" />
+    <input type="hidden" name="desde" value="<%= desde %>" />
+    <input type="hidden" name="hasta" value="<%= hasta %>" />
+    <input name="texto" maxlength="240" autocomplete="off" placeholder="Escribe una frase" required />
+    <button class="btn primary" type="submit">Enviar</button>
+  </form>
+</section>
+<script>
+  const chatLog = document.getElementById("chat-log");
+  if (chatLog) chatLog.scrollTop = chatLog.scrollHeight;
+</script>
+<%- include("partials/footer") %>

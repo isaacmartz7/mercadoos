@@ -8,8 +8,7 @@
 </header>
 
 <form class="panel form-inline" method="post" action="/usuarios">
-  <p class="hint form-intro">La contraseña debe tener al menos 8 caracteres. No se vuelve a mostrar después de crear la cuenta.</p>
-  <label>Nombre completo <input name="nombre" required placeholder="Nombre y apellido" /></label>
+  <p class="hint form-intro">Crea el usuario de login. El nombre de quien cobra se escribe al abrir el turno en caja. La contraseña debe tener al menos 8 caracteres.</p>
   <label>Usuario <input name="usuario" required placeholder="sin espacios" autocomplete="off" /></label>
   <label>Contraseña <input name="password" type="password" minlength="8" autocomplete="new-password" required /></label>
   <label>Rol
@@ -28,11 +27,10 @@
   <% } else { %>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th></tr></thead>
         <tbody>
           <% usuarios.forEach(function (u) { %>
             <tr>
-              <td><%= u.nombre %></td>
               <td><%= u.usuario %></td>
               <td><%= u.rol %><% if (u.rol_clave === "superusuario") { %> <span class="role-badge">dev</span><% } %></td>
               <td><%= u.activo ? "Activo" : "Inactivo" %></td>

@@ -165,6 +165,15 @@ function createSchema() {
       FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     );
   `);
+  ensureColumn("ventas", "cajero_nombre", "TEXT");
+  ensureColumn("turnos", "nombre_cajero", "TEXT");
+}
+
+function ensureColumn(table, column, type) {
+  const cols = all(`PRAGMA table_info(${table})`).map((row) => row.name);
+  if (!cols.includes(column)) {
+    exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  }
 }
 
 async function init() {
@@ -204,6 +213,7 @@ async function init() {
   if (fs.existsSync(DB_PATH)) {
     db = new SQL.Database(fs.readFileSync(DB_PATH));
     createSchema();
+    persist();
   } else {
     const bundledDbCandidates = [
       path.join(__dirname, "..", "data", "mercadoos.db"),

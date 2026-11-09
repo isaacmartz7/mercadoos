@@ -10,6 +10,8 @@
   const wrapRecibido = document.getElementById("wrap-recibido");
   const cobrarBtn = document.getElementById("cobrar");
   const esperarBtn = document.getElementById("esperar");
+  const modoBtn = document.getElementById("modo-devolucion");
+  const posEl = document.querySelector(".pos");
   const consultaEl = document.getElementById("consulta");
   const reciboEl = document.getElementById("recibo");
   const esperaWrap = document.getElementById("espera-wrap");
@@ -28,6 +30,7 @@
   let searchSeq = 0;
   let highlight = -1;
   let cobrando = false;
+  let modoDevolucion = false;
 
   const fmt = (n) => `${moneda} ${Number(n).toFixed(2)}`;
   const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -69,6 +72,11 @@
   }
 
   function bloqueoCobro() {
+    if (modoDevolucion) {
+      if (!turno.abierto) return "Abre el turno antes de devolver.";
+      if (!items.length) return "Agrega el producto que se devuelve.";
+      return "";
+    }
     if (!turno.abierto) return "Abre el turno antes de cobrar.";
     if (!items.length) return "Agrega al menos un producto al ticket.";
     const t = totals();
@@ -76,6 +84,25 @@
       return "El efectivo recibido no cubre el total.";
     }
     return "";
+  }
+
+  function aplicarModo() {
+    posEl.classList.toggle("is-return", modoDevolucion);
+    modoBtn.textContent = modoDevolucion ? "Vender" : "Devolver";
+    modoBtn.classList.toggle("is-on", modoDevolucion);
+    modoBtn.setAttribute("aria-pressed", modoDevolucion ? "true" : "false");
+    document.getElementById("ticket-titulo").textContent = modoDevolucion ? "Devolución" : "Ticket";
+    document.getElementById("modo-hint").classList.toggle("hidden", !modoDevolucion);
+    document.getElementById("cobro-eyebrow").textContent = modoDevolucion ? "Devolución" : "Cobro";
+    document.getElementById("total-label").textContent = modoDevolucion ? "Total a devolver" : "Total a cobrar";
+    cobrarBtn.textContent = modoDevolucion ? "Confirmar devolución" : "Cobrar";
+    document.getElementById("descuento-wrap").classList.toggle("hidden", modoDevolucion);
+    document.getElementById("cambio-row").classList.toggle("hidden", modoDevolucion);
+    wrapRecibido.classList.toggle("hidden", modoDevolucion);
+    document.getElementById("cobro-hint").textContent = modoDevolucion
+      ? "Confirmar entrega el dinero y sube el stock."
+      : "Cobrar descuenta el stock. Esperar guarda el ticket si el cliente se aparta.";
+    if (modoDevolucion) descuentoEl.value = "0";
   }
 
   function ticketUrl(id) {
@@ -125,8 +152,11 @@
       ? items
           .map((it, i) => {
             const linea = it.precio_venta * it.cantidad;
+            const detalle = modoDevolucion
+              ? `${fmt(it.precio_venta)} · a devolver`
+              : `${fmt(it.precio_venta)} · quedan ${esc(it.stock)}`;
             return `<li>
-              <span class="line-name">${esc(it.nombre)}<br><small>${fmt(it.precio_venta)} · quedan ${esc(it.stock)}</small></span>
+              <span class="line-name">${esc(it.nombre)}<br><small>${detalle}</small></span>
               <div class="qty">
                 <button type="button" data-dec="${i}" aria-label="Bajar cantidad de ${esc(it.nombre)}">−</button>
                 <input type="number" min="0.01" step="0.01" value="${it.cantidad}" data-i="${i}" aria-label="Cantidad de ${esc(it.nombre)}" />
@@ -137,7 +167,7 @@
             </li>`;
           })
           .join("")
-      : "<li class='muted'>El ticket está vacío. Busca un producto y agrégalo.</li>";
+      : `<li class="muted">${modoDevolucion ? "Busca el producto que el cliente devuelve." : "El ticket está vacío. Busca un producto y agrégalo."}</li>`;
   }
 
   function renderTotals() {
@@ -149,9 +179,9 @@
     const cambio = metodoEl.value === "efectivo" ? Math.max(0, round2(recibido - t.total)) : 0;
     document.getElementById("cambio").textContent = fmt(cambio);
     const efectivo = metodoEl.value === "efectivo";
-    wrapRecibido.classList.toggle("is-off", !efectivo);
+    wrapRecibido.classList.toggle("is-off", modoDevolucion || !efectivo);
     cobrarBtn.disabled = cobrando || Boolean(bloqueoCobro());
-    esperarBtn.disabled = !items.length;
+    esperarBtn.disabled = modoDevolucion || !items.length;
   }
 
   function render() {
@@ -170,10 +200,13 @@
       renderTotals();
       return;
     }
+    document.getElementById("turno-nombre").textContent = turno.nombreCajero || "caja";
     document.getElementById("turno-desde").textContent = turno.apertura;
     document.getElementById("turno-fondo").textContent = fmt(turno.fondo);
-    document.getElementById("turno-efectivo").textContent = fmt(turno.ventasEfectivo);
-    document.getElementById("turno-tarjeta").textContent = fmt(turno.ventasTarjeta);
+    document.getElementById("turno-efectivo").textContent = fmt(turno.efectivoCobrado ?? turno.ventasEfectivo);
+    document.getElementById("turno-devuelto").textContent = fmt(turno.efectivoDevuelto || 0);
+    document.getElementById("turno-tarjeta").textContent = fmt(turno.tarjetaCobrada ?? turno.ventasTarjeta);
+    document.getElementById("turno-tarjeta-devuelta").textContent = fmt(turno.tarjetaDevuelta || 0);
     document.getElementById("turno-esperado").textContent = fmt(turno.esperado);
     renderTotals();
   }
@@ -193,9 +226,14 @@
   }
 
   function showRecibo(data) {
+    const esDev = Boolean(data.devolucion);
+    document.getElementById("recibo-eyebrow").textContent = esDev ? "Devuelto" : "Cobrado";
+    document.getElementById("recibo-tipo").textContent = esDev ? "Devolución" : "Venta";
     document.getElementById("recibo-id").textContent = data.ventaId;
     document.getElementById("recibo-total").textContent = fmt(data.total);
     document.getElementById("recibo-cambio").textContent = fmt(data.cambio || 0);
+    document.getElementById("recibo-cambio-row").classList.toggle("hidden", esDev);
+    document.getElementById("recibo-listo").textContent = esDev ? "Listo" : "Nueva venta";
     const print = document.getElementById("recibo-print");
     print.href = ticketUrl(data.ventaId);
     reciboEl.classList.remove("hidden");
@@ -204,7 +242,11 @@
   function add(prod) {
     const found = items.find((it) => it.id === prod.id);
     const nextQty = found ? found.cantidad + 1 : 1;
-    if (nextQty > prod.stock) {
+    if (modoDevolucion && nextQty > 9999) {
+      showError("La cantidad a devolver es demasiado alta.");
+      return;
+    }
+    if (!modoDevolucion && nextQty > prod.stock) {
       showError(`Stock insuficiente de ${prod.nombre}. Hay ${prod.stock}.`);
       return;
     }
@@ -218,7 +260,11 @@
   function setQty(index, qty) {
     const item = items[index];
     if (!item) return;
-    if (qty > item.stock) {
+    if (modoDevolucion && qty > 9999) {
+      showError("La cantidad a devolver es demasiado alta.");
+      return;
+    }
+    if (!modoDevolucion && qty > item.stock) {
       showError(`Stock insuficiente. Hay ${item.stock}.`);
       return;
     }
@@ -266,7 +312,8 @@
             </button>`
           )
           .join("")
-      : `<p class="muted">No encontramos “${esc(q)}”. Sigue escribiendo o prueba el código.</p>`;
+      : `<p class="muted">No encontramos “${esc(q)}”.</p>
+         <button type="button" class="btn" data-nuevo>Crear este producto</button>`;
     resultados.querySelectorAll(".result").forEach((btn) => {
       btn.addEventListener("click", () => {
         pickProduct(data.find((p) => String(p.id) === btn.dataset.id));
@@ -300,6 +347,8 @@
       const fresh = data.find((p) => p.id === it.id);
       refreshed.push(fresh ? { ...fresh, cantidad: it.cantidad } : it);
     }
+    modoDevolucion = false;
+    aplicarModo();
     items = refreshed;
     descuentoEl.value = hold.descuento || "0";
     hideRecibo();
@@ -342,6 +391,72 @@
     }
   });
 
+  const alta = document.getElementById("alta");
+  const altaNombre = document.getElementById("alta-nombre");
+  const altaPrecio = document.getElementById("alta-precio");
+  const altaStock = document.getElementById("alta-stock");
+  const altaCodigo = document.getElementById("alta-codigo");
+  const altaError = document.getElementById("alta-error");
+
+  function showAltaError(msg) {
+    altaError.textContent = msg || "";
+    altaError.classList.toggle("hidden", !msg);
+  }
+
+  function openAlta() {
+    const q = buscar.value.trim();
+    const esCodigo = q.length > 0 && /^[0-9A-Za-z-]+$/.test(q) && /\d/.test(q) && q.length >= 6;
+    altaNombre.value = esCodigo ? "" : q;
+    altaCodigo.value = esCodigo ? q : "";
+    altaPrecio.value = "";
+    altaStock.value = "1";
+    showAltaError("");
+    alta.classList.remove("hidden");
+    if (esCodigo || !q) altaNombre.focus();
+    else altaPrecio.focus();
+  }
+
+  function closeAlta() {
+    alta.classList.add("hidden");
+    showAltaError("");
+    buscar.focus();
+  }
+
+  document.getElementById("nuevo-producto").addEventListener("click", openAlta);
+  document.getElementById("alta-cancelar").addEventListener("click", closeAlta);
+  resultados.addEventListener("click", (e) => {
+    if (e.target.closest("[data-nuevo]")) openAlta();
+  });
+
+  alta.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showAltaError("");
+    const payload = {
+      nombre: altaNombre.value.trim(),
+      precio_venta: Number(altaPrecio.value),
+      stock: Number(altaStock.value),
+      codigo_barras: altaCodigo.value.trim()
+    };
+    try {
+      const res = await fetch("/api/productos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showAltaError(data.error || "No se pudo crear el producto.");
+        return;
+      }
+      closeAlta();
+      resultados.innerHTML = "";
+      buscar.value = "";
+      add(data);
+    } catch (error) {
+      showAltaError("No hay conexión con el servidor.");
+    }
+  });
+
   document.getElementById("buscar-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const q = buscar.value.trim();
@@ -353,7 +468,12 @@
     if (i == null) return;
     const qty = Number(e.target.value);
     if (!Number.isFinite(qty) || qty <= 0) return;
-    if (qty > items[i].stock) {
+    if (modoDevolucion && qty > 9999) {
+      showError("La cantidad a devolver es demasiado alta.");
+      e.target.value = items[i].cantidad;
+      return;
+    }
+    if (!modoDevolucion && qty > items[i].stock) {
       showError(`Stock insuficiente. Hay ${items[i].stock}.`);
       e.target.value = items[i].cantidad;
       return;
@@ -429,28 +549,61 @@
     await resumeHold(hold);
   });
 
+  function cambiarModo() {
+    if (items.length) {
+      showError(modoDevolucion
+        ? "Confirma o vacía la devolución antes de vender."
+        : "Cobra o vacía el ticket antes de devolver.");
+      return;
+    }
+    modoDevolucion = !modoDevolucion;
+    recibidoEl.value = "";
+    showError("");
+    hideRecibo();
+    aplicarModo();
+    render();
+    buscar.focus();
+  }
+
+  async function refrescarTurno() {
+    const res = await fetch("/api/turno");
+    const data = await res.json();
+    if (!data.turno) {
+      turno = { abierto: false };
+    } else {
+      turno = { ...data.turno, abierto: true };
+    }
+    paintTurno();
+  }
+
   async function cobrar() {
     const reason = bloqueoCobro();
     if (reason) return showError(reason);
     if (cobrando) return;
+    const devolver = modoDevolucion;
     cobrando = true;
     renderTotals();
     const t = totals();
-    const payload = {
-      items: items.map((it) => ({ id: it.id, cantidad: it.cantidad })),
-      metodo_pago: metodoEl.value,
-      descuento: t.descuento,
-      recibido: Number(recibidoEl.value)
-    };
+    const payload = devolver
+      ? {
+          items: items.map((it) => ({ id: it.id, cantidad: it.cantidad })),
+          metodo_pago: metodoEl.value
+        }
+      : {
+          items: items.map((it) => ({ id: it.id, cantidad: it.cantidad })),
+          metodo_pago: metodoEl.value,
+          descuento: t.descuento,
+          recibido: Number(recibidoEl.value)
+        };
     try {
-      const res = await fetch("/api/ventas", {
+      const res = await fetch(devolver ? "/api/devoluciones" : "/api/ventas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (!res.ok) {
-        showError(data.error || "No se pudo cobrar.");
+        showError(data.error || (devolver ? "No se pudo registrar la devolución." : "No se pudo cobrar."));
         cobrando = false;
         renderTotals();
         return;
@@ -459,9 +612,14 @@
       items = [];
       descuentoEl.value = "0";
       recibidoEl.value = "";
+      if (devolver) {
+        modoDevolucion = false;
+        aplicarModo();
+      }
       showError("");
       showRecibo(data);
       render();
+      refrescarTurno().catch(() => {});
       buscar.focus();
     } catch (error) {
       showError("No hay conexión con el servidor.");
@@ -469,6 +627,9 @@
     cobrando = false;
     renderTotals();
   }
+
+  if (window.PUEDE_DEVOLVER) modoBtn.addEventListener("click", cambiarModo);
+  else modoBtn.classList.add("hidden");
 
   cobrarBtn.addEventListener("click", cobrar);
   document.getElementById("recibo-listo").addEventListener("click", () => {
@@ -494,20 +655,23 @@
     showTurnoError("");
     showTurnoOk("");
     const fondo = Number(document.getElementById("fondo").value);
+    const nombreCajero = String(document.getElementById("nombre-cajero").value || "").trim();
+    if (!nombreCajero) {
+      showTurnoError("Escribe quién cobra en este turno.");
+      return;
+    }
     try {
       const res = await fetch("/api/turno/abrir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fondo })
+        body: JSON.stringify({ fondo, nombre_cajero: nombreCajero })
       });
       const data = await res.json();
       if (!res.ok) {
         showTurnoError(data.error || "No se pudo abrir el turno.");
         return;
       }
-      turno = { ...data.turno, abierto: true };
-      paintTurno();
-      buscar.focus();
+      window.location.reload();
     } catch (error) {
       showTurnoError("No hay conexión con el servidor.");
     }
@@ -516,7 +680,9 @@
   document.getElementById("mostrar-cierre").addEventListener("click", async () => {
     showTurnoError("");
     if (items.length) {
-      showTurnoError("Cobra o espera el ticket actual antes de cerrar el turno.");
+      showTurnoError(modoDevolucion
+        ? "Confirma o vacía la devolución antes de cerrar el turno."
+        : "Cobra o espera el ticket actual antes de cerrar el turno.");
       return;
     }
     try {
@@ -556,7 +722,9 @@
     e.preventDefault();
     showTurnoError("");
     if (items.length) {
-      showTurnoError("Cobra o espera el ticket actual antes de cerrar el turno.");
+      showTurnoError(modoDevolucion
+        ? "Confirma o vacía la devolución antes de cerrar el turno."
+        : "Cobra o espera el ticket actual antes de cerrar el turno.");
       return;
     }
     try {

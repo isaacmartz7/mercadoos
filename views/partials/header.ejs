@@ -14,17 +14,17 @@
     <header class="topbar">
       <button class="menu-toggle" type="button" id="menu-toggle" aria-controls="sidebar" aria-expanded="false">Menú</button>
       <a class="brand brand-compact" href="<%= user.rol === 'cajero' ? '/caja' : '/' %>">
-        <span class="brand-mark">M</span>
-        <strong><%= config.negocio.nombre %></strong>
+        <%- include("mark") %>
+        <strong class="wordmark"><%= config.negocio.nombre.endsWith("OS") ? config.negocio.nombre.slice(0, -2) : config.negocio.nombre %><% if (config.negocio.nombre.endsWith("OS")) { %><span>OS</span><% } %></strong>
       </a>
       <span class="topbar-role"><%= user.rolNombre %></span>
     </header>
     <div class="nav-backdrop" id="nav-backdrop" hidden></div>
     <aside class="sidebar" id="sidebar">
       <a class="brand" href="<%= user.rol === 'cajero' ? '/caja' : '/' %>">
-        <span class="brand-mark">M</span>
+        <%- include("mark") %>
         <span>
-          <strong><%= config.negocio.nombre %></strong>
+          <strong class="wordmark"><%= config.negocio.nombre.endsWith("OS") ? config.negocio.nombre.slice(0, -2) : config.negocio.nombre %><% if (config.negocio.nombre.endsWith("OS")) { %><span>OS</span><% } %></strong>
           <small><%= config.negocio.sucursal %></small>
         </span>
       </a>
@@ -32,10 +32,9 @@
       <nav>
         <% if (user.rol !== 'cajero') { %><a href="/" class="<%= typeof nav !== 'undefined' && nav === 'inicio' ? 'active' : '' %>" title="Resumen del día">Inicio</a><% } %>
         <% if (can('caja')) { %><a href="/caja" class="<%= typeof nav !== 'undefined' && nav === 'caja' ? 'active' : '' %>" title="Cobrar productos">Caja</a><% } %>
-        <% if (can('productos')) { %><a href="/productos" class="<%= typeof nav !== 'undefined' && nav === 'productos' ? 'active' : '' %>" title="Ver y editar el catálogo">Productos</a><% } %>
-        <% if (can('inventario')) { %><a href="/inventario" class="<%= typeof nav !== 'undefined' && nav === 'inventario' ? 'active' : '' %>" title="Existencias y ajustes">Inventario</a><% } %>
+        <% if (can('inventario')) { %><a href="/inventario" class="<%= typeof nav !== 'undefined' && nav === 'inventario' ? 'active' : '' %>" title="Existencias, precios y ajustes">Inventario</a><% } %>
         <% if (can('ventas')) { %><a href="/ventas" class="<%= typeof nav !== 'undefined' && nav === 'ventas' ? 'active' : '' %>" title="Historial de tickets">Ventas</a><% } %>
-        <% if (can('reportes')) { %><a href="/reportes" class="<%= typeof nav !== 'undefined' && nav === 'reportes' ? 'active' : '' %>" title="Totales y tendencias">Reportes</a><% } %>
+        <% if (can('asistente')) { %><a href="/asistente" class="<%= typeof nav !== 'undefined' && nav === 'asistente' ? 'active' : '' %>" title="Preguntas, stock y totales">Asistente</a><% } %>
         <% if (can('usuarios')) { %><a href="/usuarios" class="<%= typeof nav !== 'undefined' && nav === 'usuarios' ? 'active' : '' %>" title="Cuentas del equipo">Usuarios</a><% } %>
       </nav>
       <form class="sidebar-user" method="post" action="/logout">

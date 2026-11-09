@@ -17,16 +17,10 @@
       <span>Busca un producto y cobra el ticket</span>
     </a>
   <% } %>
-  <% if (can('productos')) { %>
-    <a class="shortcut" href="/productos">
-      <strong>Productos</strong>
-      <span>Consulta precios o agrega un artículo</span>
-    </a>
-  <% } %>
   <% if (can('inventario')) { %>
     <a class="shortcut" href="/inventario">
       <strong>Inventario</strong>
-      <span>Revisa existencias y stock bajo</span>
+      <span>Revisa existencias y corrige precios</span>
     </a>
   <% } %>
   <% if (can('ventas')) { %>
@@ -35,10 +29,10 @@
       <span>Abre el historial de tickets</span>
     </a>
   <% } %>
-  <% if (can('reportes')) { %>
-    <a class="shortcut" href="/reportes">
-      <strong>Reportes</strong>
-      <span>Totales del día y de la semana</span>
+  <% if (can('asistente')) { %>
+    <a class="shortcut" href="/asistente">
+      <strong>Asistente</strong>
+      <span>Pregunta por stock, anota entradas y mira los totales</span>
     </a>
   <% } %>
   <% if (can('usuarios')) { %>

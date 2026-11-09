@@ -3,7 +3,7 @@
   <div>
     <p class="eyebrow">Bodega</p>
     <h1>Inventario</h1>
-    <p class="lede">Las filas en amarillo están en o bajo el mínimo. El kardex muestra los últimos movimientos.</p>
+    <p class="lede">Aquí está cada producto registrado. Las filas en amarillo están en o bajo el mínimo. Corrige nombre, precio o código con Editar. El alta de un producto nuevo se hace en Caja.</p>
   </div>
 </header>
 
@@ -46,13 +46,18 @@
     <% } else { %>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th></tr></thead>
+          <thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Mínimo</th><th></th></tr></thead>
           <tbody>
             <% productos.forEach(function (p) { %>
-              <tr class="<%= p.stock <= p.stock_minimo ? 'row-warn' : '' %>">
-                <td><%= p.nombre %></td>
+              <tr class="<%= p.stock <= p.stock_minimo ? 'row-warn' : '' %> <%= p.activo ? '' : 'row-off' %>">
+                <td>
+                  <%= p.nombre %>
+                  <% if (!p.activo) { %><small class="muted">Inactivo</small><% } %>
+                </td>
+                <td><%= config.negocio.moneda %> <%= money(p.precio_venta) %></td>
                 <td><%= money(p.stock) %> <%= p.unidad %></td>
                 <td><%= money(p.stock_minimo) %></td>
+                <td><% if (can('productos')) { %><a href="/productos/<%= p.id %>/editar">Editar</a><% } %></td>
               </tr>
             <% }) %>
           </tbody>

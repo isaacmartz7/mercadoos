@@ -17,15 +17,15 @@ function seedIfEmpty(database) {
   }
 
   const users = [
-    ["Ana López", "admin", "admin123", 1],
-    ["Carlos Pérez", "cajero", "cajero123", 2],
-    ["María Gómez", "bodeguero", "bodeguero123", 3],
-    ["Luis Fernández", "gerente", "gerente123", 4]
+    ["admin", "admin123", 1],
+    ["cajero", "cajero123", 2],
+    ["bodeguero", "bodeguero123", 3],
+    ["gerente", "gerente123", 4]
   ];
-  for (const [nombre, usuario, password, rolId] of users) {
+  for (const [usuario, password, rolId] of users) {
     run(
       "INSERT INTO usuarios (nombre, usuario, password_hash, rol_id) VALUES (?, ?, ?, ?)",
-      [nombre, usuario, bcrypt.hashSync(password, 10), rolId]
+      [usuario, usuario, bcrypt.hashSync(password, 10), rolId]
     );
   }
 

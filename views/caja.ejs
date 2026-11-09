@@ -3,8 +3,11 @@
   <p id="turno-error" class="flash error hidden"></p>
   <p id="turno-ok" class="flash ok hidden"></p>
   <div id="turno-cerrado">
-    <p class="hint form-intro">Abre el turno con el efectivo del fondo para poder cobrar.</p>
+    <p class="hint form-intro">Abre el turno con tu nombre y el efectivo del fondo. Durante la venta no se vuelve a pedir.</p>
     <form id="abrir-turno" class="form-inline">
+      <label>Quién cobra
+        <input id="nombre-cajero" required maxlength="80" placeholder="Tu nombre" autocomplete="name" />
+      </label>
       <label>Fondo de caja (<%= config.negocio.moneda %>)
         <input id="fondo" type="number" min="0" step="0.01" value="0" required />
       </label>
@@ -13,13 +16,15 @@
   </div>
   <div id="turno-abierto" class="hidden">
     <div class="turno-head">
-      <p>Turno abierto desde <strong id="turno-desde"></strong>. Fondo <strong id="turno-fondo"></strong>.</p>
+      <p>Cobra <strong id="turno-nombre"></strong>. Abierto desde <strong id="turno-desde"></strong>. Fondo <strong id="turno-fondo"></strong>.</p>
       <button class="btn" type="button" id="mostrar-cierre">Cerrar turno</button>
     </div>
     <form id="cerrar-turno" class="hidden">
       <p>Efectivo vendido: <strong id="turno-efectivo"></strong></p>
+      <p>Efectivo devuelto: <strong id="turno-devuelto"></strong></p>
       <p>Tarjeta: <strong id="turno-tarjeta"></strong></p>
-      <p>Esperado en caja: <strong id="turno-esperado"></strong> <span class="hint">fondo + efectivo</span></p>
+      <p>Tarjeta devuelta: <strong id="turno-tarjeta-devuelta"></strong></p>
+      <p>Esperado en caja: <strong id="turno-esperado"></strong> <span class="hint">fondo + efectivo − devoluciones</span></p>
       <label>Efectivo contado
         <input id="contado" type="number" min="0" step="0.01" required />
       </label>
@@ -28,50 +33,75 @@
     </form>
   </div>
 </section>
-<div class="pos">
-  <section class="pos-left">
+<div class="pos pos-register">
+  <section class="pos-sale panel">
     <header class="page-head compact">
       <div>
         <p class="eyebrow">Punto de venta</p>
         <h1>Caja</h1>
-        <p class="lede">Escribe una letra y elige el producto, o pasa el código de barras. F2 busca y F4 cobra.</p>
       </div>
+      <p class="pos-keys">F2 busca · Enter agrega · F4 cobra</p>
     </header>
     <form id="buscar-form" class="scan-bar" autocomplete="off">
-      <input id="buscar" name="q" placeholder="Empieza a escribir el producto..." aria-label="Buscar producto" autocomplete="off" autofocus />
+      <input id="buscar" name="q" placeholder="Producto o código de barras" aria-label="Buscar producto" autocomplete="off" autofocus />
       <button class="btn primary" type="submit">Agregar</button>
+      <button class="btn" type="button" id="nuevo-producto">Nuevo</button>
+      <button class="btn" type="button" id="modo-devolucion">Devolver</button>
     </form>
-    <p class="hint">Las sugerencias aparecen mientras escribes. Usa las flechas y Enter para elegir, o haz clic. Esc limpia la búsqueda.</p>
-    <div id="resultados" class="results"></div>
-  </section>
-  <aside class="pos-cart panel">
-    <div id="recibo" class="recibo hidden" role="status">
-      <p class="eyebrow">Cobrado</p>
-      <p>Venta #<span id="recibo-id"></span></p>
-      <p class="grand" id="recibo-total"></p>
-      <p>Cambio a entregar: <strong id="recibo-cambio"></strong></p>
-      <div class="actions">
-        <a id="recibo-print" class="btn" target="_blank" rel="noopener">Imprimir</a>
-        <button id="recibo-listo" class="btn primary" type="button">Nueva venta</button>
+    <form id="alta" class="alta hidden">
+      <p class="eyebrow">Producto nuevo</p>
+      <div class="alta-grid">
+        <label>Nombre
+          <input id="alta-nombre" required maxlength="80" placeholder="Ej. Jabón de barra" />
+        </label>
+        <label>Precio (<%= config.negocio.moneda %>)
+          <input id="alta-precio" type="number" min="0" step="0.01" required placeholder="0.00" />
+        </label>
+        <label>Stock
+          <input id="alta-stock" type="number" min="0.01" step="0.01" value="1" required />
+        </label>
+        <label>Código
+          <input id="alta-codigo" maxlength="40" placeholder="Opcional" />
+        </label>
       </div>
-    </div>
+      <p id="alta-error" class="flash error hidden"></p>
+      <div class="alta-actions">
+        <button class="btn" type="button" id="alta-cancelar">Cancelar</button>
+        <button class="btn primary" type="submit">Guardar y agregar</button>
+      </div>
+    </form>
+    <div id="resultados" class="results"></div>
     <div id="consulta" class="consulta hidden"></div>
     <div id="espera-wrap" class="espera hidden">
       <p class="eyebrow">En espera</p>
       <ul id="espera-lista" class="espera-lista"></ul>
     </div>
     <div class="ticket-head">
-      <h2>Ticket</h2>
+      <h2 id="ticket-titulo">Ticket</h2>
       <a id="reimprimir" class="btn hidden" target="_blank" rel="noopener">Reimprimir último</a>
     </div>
+    <p id="modo-hint" class="hint hidden">Modo devolución: el stock sube y, si pagas en efectivo, sale de la caja.</p>
     <ul id="carrito" class="cart"></ul>
-    <label class="discount">Descuento (<%= config.negocio.moneda %>)
+  </section>
+  <aside class="pos-pay panel">
+    <div id="recibo" class="recibo hidden" role="status">
+      <p class="eyebrow" id="recibo-eyebrow">Cobrado</p>
+      <p><span id="recibo-tipo">Venta</span> #<span id="recibo-id"></span></p>
+      <p class="grand" id="recibo-total"></p>
+      <p id="recibo-cambio-row">Cambio a entregar: <strong id="recibo-cambio"></strong></p>
+      <div class="actions">
+        <a id="recibo-print" class="btn" target="_blank" rel="noopener">Imprimir</a>
+        <button id="recibo-listo" class="btn primary" type="button">Nueva venta</button>
+      </div>
+    </div>
+    <p class="eyebrow" id="cobro-eyebrow">Cobro</p>
+    <label class="discount" id="descuento-wrap">Descuento (<%= config.negocio.moneda %>)
       <input id="descuento" type="number" min="0" step="0.01" value="0" />
     </label>
     <dl class="totals">
       <div><dt>Subtotal</dt><dd id="subtotal">L 0.00</dd></div>
       <div><dt>ISV</dt><dd id="impuesto">L 0.00</dd></div>
-      <div class="grand"><dt>Total a cobrar</dt><dd id="total">L 0.00</dd></div>
+      <div class="grand"><dt id="total-label">Total a cobrar</dt><dd id="total">L 0.00</dd></div>
     </dl>
     <div class="pay-row">
       <label>Forma de pago
@@ -94,13 +124,13 @@
         </div>
       </div>
     </div>
-    <p class="cambio">Cambio a entregar: <strong id="cambio">L 0.00</strong></p>
+    <p class="cambio" id="cambio-row">Cambio a entregar: <strong id="cambio">L 0.00</strong></p>
     <p id="pos-error" class="flash error hidden"></p>
     <div class="charge-row">
       <button id="esperar" class="btn" type="button">Esperar</button>
       <button id="cobrar" class="btn primary big" type="button">Cobrar</button>
     </div>
-    <p class="hint">Al cobrar se descuenta el stock. Esperar guarda el ticket si el cliente se aparta.</p>
+    <p class="hint" id="cobro-hint">Cobrar descuenta el stock. Esperar guarda el ticket si el cliente se aparta.</p>
   </aside>
 </div>
 <script>
@@ -108,6 +138,7 @@
   window.USER_ID = <%= Number(user.id) %>;
   window.TURNO = <%- JSON.stringify(turno || null).replace(/</g, "\\u003c") %>;
   window.ULTIMA_VENTA = <%= ultimaVentaId == null ? "null" : Number(ultimaVentaId) %>;
+  window.PUEDE_DEVOLVER = <%= can("devoluciones") ? "true" : "false" %>;
 </script>
 <script src="/static/js/caja.js"></script>
 <%- include("partials/footer") %>

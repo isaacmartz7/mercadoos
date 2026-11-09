@@ -1,11 +1,11 @@
 <%- include("partials/header") %>
 <header class="page-head">
   <div>
-    <p class="eyebrow">Catálogo</p>
-    <h1><%= producto ? "Editar producto" : "Nuevo producto" %></h1>
-    <p class="lede"><%= producto ? "Cambia solo lo necesario y guarda. El stock se ajusta en Inventario." : "Completa los datos para que el producto aparezca en caja." %></p>
+    <p class="eyebrow">Inventario</p>
+    <h1>Editar producto</h1>
+    <p class="lede">Corrige nombre, precio, código, impuesto o si sigue activo. El stock se ajusta en Inventario. Un producto nuevo se crea en Caja.</p>
   </div>
-  <a class="btn" href="/productos">Volver al listado</a>
+  <a class="btn" href="/inventario">Volver a inventario</a>
 </header>
 
 <form class="panel form-grid" method="post">
@@ -47,6 +47,10 @@
   <label>Stock mínimo
     <input name="stock_minimo" type="number" step="0.01" min="0" value="<%= producto ? producto.stock_minimo : 5 %>" />
     <small class="field-help">Si el stock baja de este número, se marca en amarillo.</small>
+  </label>
+  <label class="check">
+    <input type="checkbox" name="activo" value="1" <%= !producto || producto.activo ? "checked" : "" %> />
+    Activo en caja
   </label>
   <div class="form-actions">
     <button class="btn primary" type="submit"><%= producto ? "Guardar cambios" : "Crear producto" %></button>

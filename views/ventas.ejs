@@ -27,9 +27,13 @@
               <td><%= v.id %></td>
               <td><%= v.fecha %></td>
               <td><%= v.cajero %></td>
-              <td><%= config.negocio.moneda %> <%= money(v.total) %></td>
+              <td><%= v.estado === "devolucion" ? "− " : "" %><%= config.negocio.moneda %> <%= money(v.total) %></td>
               <td><%= v.metodo_pago === "tarjeta" ? "Tarjeta" : "Efectivo" %></td>
-              <td><%= v.estado === "anulada" ? "Anulada" : "Completada" %></td>
+              <td>
+                <% if (v.estado === "devolucion") { %><span class="tag return">Devolución</span>
+                <% } else if (v.estado === "anulada") { %><span class="tag void">Anulada</span>
+                <% } else { %>Completada<% } %>
+              </td>
               <td><a href="/ventas/<%= v.id %>">Ver ticket</a></td>
             </tr>
           <% }) %>
