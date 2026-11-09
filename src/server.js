@@ -187,6 +187,10 @@ app.set("views", viewsPath);
 app.set("view engine", "ejs");
 
 const publicPath = findPath("public");
+app.get("/favicon.ico", (req, res) => {
+  res.type("image/svg+xml");
+  res.sendFile(path.join(publicPath, "favicon.svg"));
+});
 app.use("/static", express.static(publicPath));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
